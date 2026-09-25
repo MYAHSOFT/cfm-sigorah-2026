@@ -15,7 +15,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'animatrice' => \App\Http\Middleware\CFAnimatrice::class,
-            'animatrice.api' => \App\Http\Middleware\EnsureIsAnimatrice::class,
             'groupement' => \App\Http\Middleware\CFGroupement::class,
         ]);
     })
