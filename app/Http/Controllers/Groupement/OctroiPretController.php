@@ -3,19 +3,19 @@
 namespace App\Http\Controllers\Groupement;
 
 use DB;
-use App\Models\Compte;
-use App\Models\Journal;
-use App\Models\CFDossier;
-use App\Models\Calendrier;
-use App\Models\CDOperation;
-use App\Models\ContratPret;
-use App\Models\CFEcheancier;
-use App\Models\GroupeSolide;
+use App\Models\Saving\AccountSaving;
+use App\Models\Accounting\JournalAccounting;
+use App\Models\Association\Cycle;
+use App\Models\Lending\ScheduleLoan;
+use App\Models\Lending\TransactionLoan;
+use App\Models\Lending\ContractLoan;
+use App\Models\Association\GroupSchedule;
+use App\Models\Association\Group;
 use Illuminate\Http\Request;
-use App\Models\ProduitCredit;
-use App\Models\CalendrierCycle;
-use App\Models\ContratPretGroupe;
-use App\Models\DemandePretGroupe;
+use App\Models\Lending\ProductLoan;
+use App\Models\Association\CycleCalendar;
+use App\Models\Association\GroupLoanContract;
+use App\Models\Association\GroupLoanApplication;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Repositories\CFDossierRepository;
@@ -59,7 +59,7 @@ class OctroiPretController extends Controller
 
         //Demandes qui ne sont pas encore octroyé mais déjà avoir l'approbation
 
-        $demande_not_octroyes = CFDossier::leftJoin('cf_contrat_pret_groupes','cf_dossiers.id_dossier','cf_contrat_pret_groupes.dossier_id')
+        $demande_not_octroyes = Cycle::leftJoin('cf_contrat_pret_groupes','cf_dossiers.id_dossier','cf_contrat_pret_groupes.dossier_id')
                         // ->where('cf_dossiers.groupe_id', session('id_groupe'))
                         ->where('animatrice', $user->name)
                         ->whereNull('dossier_id')
@@ -71,7 +71,7 @@ class OctroiPretController extends Controller
             $doc_octroyes[] = $demande->id_dossier;
         }
 
-        $demandes = DemandePretGroupe::join('cd_demandes','cf_demande_pret_groupes.ref_dde', 'cd_demandes.id_demande')
+        $demandes = GroupLoanApplication::join('cd_demandes','cf_demande_pret_groupes.ref_dde', 'cd_demandes.id_demande')
                                 ->join('cf_dossiers', 'cf_demande_pret_groupes.dossier_id','cf_dossiers.id_dossier')
                                 ->join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
                                 ->where('animatrice', $user->name)
@@ -105,7 +105,7 @@ class OctroiPretController extends Controller
     public function create($id_dossier)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         $carts = session()->has('cf_cart_octroi') ? session('cf_cart_octroi') : [];
 
@@ -116,7 +116,7 @@ class OctroiPretController extends Controller
 
 
 
-        $demandes = DemandePretGroupe::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
+        $demandes = GroupLoanApplication::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
                                 ->join('tiers','cd_demandes.tiers_id','=','tiers.id_tiers')
                                 ->where('dossier_id', $id_dossier)
                                 ->get();
@@ -167,9 +167,9 @@ class OctroiPretController extends Controller
             return back()->withErrors()->withInput();
         }
 
-        CFDossier::where('id_dossier', $dossier->id_dossier)->update(['date_octroi_effectif'=>$this->request->dateContrat]);
+        Cycle::where('id_dossier', $dossier->id_dossier)->update(['date_octroi_effectif'=>$this->request->dateContrat]);
 
-        $nbReunion = CalendrierCycle::where('dossier_id', $this->request->dossierId)->count();
+        $nbReunion = CycleCalendar::where('dossier_id', $this->request->dossierId)->count();
 
         if($nbReunion == 0){
 
@@ -190,11 +190,11 @@ class OctroiPretController extends Controller
 
         }
 
-        $first_remb = CalendrierCycle::where('dossier_id', $this->request->dossierId)->min('date_oper');
+        $first_remb = CycleCalendar::where('dossier_id', $this->request->dossierId)->min('date_oper');
 
-        $produit = ProduitCredit::where('id_produit', $this->request->produit)->first();
+        $produit = ProductLoan::where('id_produit', $this->request->produit)->first();
             
-        $echeance = CalendrierCycle::where('dossier_id', $this->request->dossierId)->max('date_oper');
+        $echeance = CycleCalendar::where('dossier_id', $this->request->dossierId)->max('date_oper');
 
         DB::transaction(function () use($dossier, $produit, $first_remb, $echeance){
 
@@ -202,7 +202,7 @@ class OctroiPretController extends Controller
 
             $echeanciers_membres = \App\Lib\CalendrierGroupement::echeancierParMembre($dossier, $this->demande, 'A');
 
-            $compte = Compte::where('tiers_id', $dossier->id_tiers)
+            $compte = AccountSaving::where('tiers_id', $dossier->id_tiers)
                             ->where('produit_id', config('groupement.produit_base'))
                             ->first();
 
@@ -240,7 +240,7 @@ class OctroiPretController extends Controller
 
                     }
 
-                    // CFEcheancier::insert($echeanciers);
+                    // GroupSchedule::insert($echeanciers);
 
                 }
 
@@ -256,17 +256,17 @@ class OctroiPretController extends Controller
                 $journal['module'] = 'G';
                 $journal['libelle'] = "JOURNAL DCF ".$dossier->animatrice;
 
-                ContratPret::create($contrat);
+                ContractLoan::create($contrat);
 
-                ContratPretGroupe::create([
+                GroupLoanContract::create([
                     'pret_id'   =>$contrat["id_pret"],
                     'groupe_id' =>$demande->groupe_id,
                     'dossier_id'  =>$this->request->dossierId,
                 ]);
 
-                Journal::create($journal);
+                JournalAccounting::create($journal);
 
-                CDOperation::create([
+                TransactionLoan::create([
                     'pret_id'  =>$contrat["id_pret"],
                     'journal_id'  =>$id_journal,
                     'num_piece'  =>$num_piece,
@@ -274,16 +274,16 @@ class OctroiPretController extends Controller
                     'debit'  =>$contrat["mtt_capital"],
                 ]);
 
-                Calendrier::create([
+                ScheduleLoan::create([
                     'pret_id'  =>$contrat["id_pret"],
                     'date_oper'  =>$echeance,
                     'capital'  =>$contrat["mtt_capital"],
                     'interet'  =>$contrat["mtt_capital"]*0.18,
                 ]);
 
-                CFEcheancier::insert($echeanciers);
+                GroupSchedule::insert($echeanciers);
 
-                CFDossier::where('id_dossier', $this->request->dossierId)->update([
+                Cycle::where('id_dossier', $this->request->dossierId)->update([
                     'statut' =>'A',
                     'statut_octroi' =>'1'
                 ]);
@@ -311,13 +311,13 @@ class OctroiPretController extends Controller
         $id_dossier)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return abort(404);
         }
 
-        $groupe = GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
+        $groupe = Group::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
                         ->where('id_groupe', $dossier->groupe_id)
                         ->first();
         

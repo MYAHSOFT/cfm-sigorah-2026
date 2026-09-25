@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Groupement;
 
 use Illuminate\Http\Request;
-use App\Models\CycleActivite;
+use App\Models\Association\Cycle;
 use App\Http\Requests\CycleRequest;
 use App\Http\Controllers\Controller;
 use App\Repositories\GroupeSolideRepository;
@@ -164,7 +164,7 @@ class CycleController extends Controller
             $mode_reunion = $request->mode;
         }
 
-        CycleActivite::create([
+        Cycle::create([
             'id_cycle'  =>$id_cycle,
             'groupe_id'  =>$id_groupe,
             'debut_cycle'   =>$request->dateDebut,
@@ -277,7 +277,7 @@ class CycleController extends Controller
     {
         //`id_cycle`, `id_groupe`, `debut_cycle`, `fin_cycle`, `mode_reunion`
 
-        CycleActivite::where('id_cycle', $id_cycle)
+        Cycle::where('id_cycle', $id_cycle)
                 ->update([
             'debut_cycle'   =>$request->dateDebut,
             'fin_cycle'   =>$request->dateFin,
@@ -298,7 +298,7 @@ class CycleController extends Controller
     public function destroy($id_cycle)
     {
 
-        CycleActivite::where('id_cycle', $id_cycle)
+        Cycle::where('id_cycle', $id_cycle)
                 ->update([
                     'statut'=>'A',
                 ]);

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CFMembre;
-use App\Models\GroupeSolide;
-use App\Models\Tiers;
+use App\Models\Association\Member;
+use App\Models\Association\Group;
+use App\Models\Customer\Customer;
 use Illuminate\Http\Request;
 
 /**
@@ -21,11 +21,11 @@ class BureauController extends ApiController
     ];
 
     /** Composition actuelle du bureau. */
-    public function index(GroupeSolide $groupe)
+    public function index(Group $groupe)
     {
         $this->authorize('access', $groupe);
 
-        $tiers = Tiers::join('cf_membres', 'tiers.id_tiers', '=', 'cf_membres.tiers_id')
+        $tiers = Customer::join('cf_membres', 'tiers.id_tiers', '=', 'cf_membres.tiers_id')
             ->where('groupe_id', $groupe->id_groupe)
             ->where('cf_membres.fonction_id', '<>', 'MBR')
             ->get();
@@ -46,7 +46,7 @@ class BureauController extends ApiController
     }
 
     /** Affecte un membre à une fonction du bureau. Body: { tiers_id, fonction }. */
-    public function store(Request $request, GroupeSolide $groupe)
+    public function store(Request $request, Group $groupe)
     {
         $this->authorize('access', $groupe);
 
@@ -56,11 +56,11 @@ class BureauController extends ApiController
         ]);
 
         // Libère la fonction si déjà occupée, puis l'attribue.
-        CFMembre::where('groupe_id', $groupe->id_groupe)
+        Member::where('groupe_id', $groupe->id_groupe)
             ->where('fonction_id', $data['fonction'])
             ->update(['fonction_id' => 'MBR']);
 
-        CFMembre::where('groupe_id', $groupe->id_groupe)
+        Member::where('groupe_id', $groupe->id_groupe)
             ->where('tiers_id', $data['tiers_id'])
             ->update(['fonction_id' => $data['fonction']]);
 

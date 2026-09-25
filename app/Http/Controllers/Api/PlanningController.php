@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CalendrierCycle;
+use App\Models\Association\CycleCalendar;
 use Illuminate\Http\Request;
 
 /**
@@ -21,7 +21,7 @@ class PlanningController extends ApiController
 
         $agent = $this->employe()->id_employe;
 
-        $groupes = CalendrierCycle::join('cf_dossiers', 'cf_calendier_cycles.dossier_id', 'cf_dossiers.id_dossier')
+        $groupes = CycleCalendar::join('cf_dossiers', 'cf_calendier_cycles.dossier_id', 'cf_dossiers.id_dossier')
             ->join('cf_groupe_solidarites', 'cf_dossiers.groupe_id', 'cf_groupe_solidarites.id_groupe')
             ->join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
             ->where('animatrice', $agent)
@@ -31,7 +31,7 @@ class PlanningController extends ApiController
             ->groupBy('id_tiers', 'nom_tiers', 'id_groupe', 'num_caisse', 'jour_reunion', 'id_dossier')
             ->get();
 
-        $reunions = CalendrierCycle::join('cf_dossiers', 'cf_calendier_cycles.dossier_id', 'cf_dossiers.id_dossier')
+        $reunions = CycleCalendar::join('cf_dossiers', 'cf_calendier_cycles.dossier_id', 'cf_dossiers.id_dossier')
             ->where('animatrice', $agent)
             ->whereYear('date_oper', $year)
             ->whereMonth('date_oper', $month)

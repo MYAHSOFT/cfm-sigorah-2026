@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Groupement;
 
-use App\Models\DemandePret;
+use App\Models\Lending\ApplicationLoan;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -21,7 +21,7 @@ class PanierPretCartController extends Controller
     public function create($id_tiers)
     {
 
-        $demande = DemandePret::join('tiers', 'cd_demandes.tiers_id', 'tiers.id_tiers')
+        $demande = ApplicationLoan::join('tiers', 'cd_demandes.tiers_id', 'tiers.id_tiers')
                             ->join('cf_demande_pret_groupes','cd_demandes.id_demande','cf_demande_pret_groupes.ref_dde')
                             ->where('id_tiers', $id_tiers)
                             ->first();
@@ -47,7 +47,7 @@ class PanierPretCartController extends Controller
     public function store(Request $request)
     {
 
-        $demande = DemandePret::where('cd_demandes.id_demande',$request->refDde)
+        $demande = ApplicationLoan::where('cd_demandes.id_demande',$request->refDde)
                             ->first();
 
         $mtt_recommande = (double)$demande->mtt_recommande;

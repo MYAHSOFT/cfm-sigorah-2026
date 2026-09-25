@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Groupement;
 
-use App\Models\Tiers;
-use App\Models\CFDossier;
-use App\Models\GroupeSolide;
+use App\Models\Customer\Customer;
+use App\Models\Association\Cycle;
+use App\Models\Association\Group;
 use Illuminate\Http\Request;
-use App\Models\CalendrierCycle;
-use App\Models\ContratPretGroupe;
+use App\Models\Association\CycleCalendar;
+use App\Models\Association\GroupLoanContract;
 use App\Http\Controllers\Controller;
-use App\Models\Echeancier;
+use App\Models\Association\GroupSchedule;
 use App\Repositories\OperationGroupeRepository;
 use DB;
 
@@ -35,23 +35,23 @@ class CartVersementController extends Controller
     public function echeancier($id_dossier)
     {
         
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return abort(404);
         }
 
-        $echeanciers = Echeancier::join('cf_contrat_pret_groupes', 'cf_echeanciers.pret_id', 'cf_contrat_pret_groupes.pret_id')
+        $echeanciers = GroupSchedule::join('cf_contrat_pret_groupes', 'cf_echeanciers.pret_id', 'cf_contrat_pret_groupes.pret_id')
                         ->where('dossier_id', $id_dossier)
                         ->select('dossier_id', 'date_oper', DB::raw("SUM(montant) montant"))
                         ->groupBy('dossier_id','date_oper')
                         ->get();
 
-        $groupe = GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
+        $groupe = Group::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
                         ->where('id_groupe', session('id_groupe'))
                         ->first();
 
-        $sum_echeance = CalendrierCycle::where('dossier_id', $id_dossier)
+        $sum_echeance = CycleCalendar::where('dossier_id', $id_dossier)
                         ->sum('montant');
 
         $nb_echeance = $echeanciers->count() > 0 ? $echeanciers->count() : 0;
@@ -72,7 +72,7 @@ class CartVersementController extends Controller
         $id_dossier)
     {
 
-        $membre = Tiers::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
+        $membre = Customer::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
                         ->where('id_tiers', $id_tiers)
                         ->first();
 
@@ -82,14 +82,14 @@ class CartVersementController extends Controller
 
         $reunion = $request->reunion;
 
-        $contrat = ContratPretGroupe::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id','cd_contrats.id_pret')
+        $contrat = GroupLoanContract::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id','cd_contrats.id_pret')
                             ->join('cd_demandes','cd_contrats.demande_id','cd_demandes.id_demande')
                             ->where('dossier_id', $id_dossier)
                             ->where('tiers_id', $id_tiers)
                             ->first();
         $id_pret = !empty($contrat->id_pret)? $contrat->id_pret : '';
         
-        $operation = Echeancier::where('pret_id', $id_pret)
+        $operation = GroupSchedule::where('pret_id', $id_pret)
                         ->where('date_oper', session('reunion'))
                         ->select('cf_echeanciers.*', DB::raw("montant AS mtt_remb"))
                         ->first();
@@ -137,7 +137,7 @@ class CartVersementController extends Controller
     public function show(Request $request, $id_dossier)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return abort(404);
@@ -147,14 +147,14 @@ class CartVersementController extends Controller
 
         session()->put('reunion',$request->reunion);
 
-        $membres = Tiers::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
+        $membres = Customer::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
                         ->where('groupe_id',$dossier->groupe_id)
                         ->where('status', 'A')
                         ->orderBy('profil')
                         ->orderBy('nom_tiers')
                         ->get();
 
-        $echMembres = Echeancier::join('cf_contrat_pret_groupes','cf_echeanciers.pret_id','cf_contrat_pret_groupes.pret_id')
+        $echMembres = GroupSchedule::join('cf_contrat_pret_groupes','cf_echeanciers.pret_id','cf_contrat_pret_groupes.pret_id')
                         ->join('cd_contrats','cf_contrat_pret_groupes.pret_id','cd_contrats.id_pret')
                         ->join('cd_demandes','cd_contrats.demande_id','cd_demandes.id_demande')
                         ->where('date_oper', $reunion)
@@ -170,7 +170,7 @@ class CartVersementController extends Controller
         }
         
 
-        $contrats = ContratPretGroupe::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id','cd_contrats.id_pret')
+        $contrats = GroupLoanContract::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id','cd_contrats.id_pret')
                             ->where('dossier_id', $id_dossier)
                             ->get();
         

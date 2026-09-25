@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Groupement;
 
 use App\Http\Controllers\Controller;
-use App\Models\CFDemandePret;
+use App\Models\Association\MemberApplication;
 use Illuminate\Http\Request;
 use App\Repositories\DemandePretTmpGroupeRepository;
-use App\Models\Tiers;
-use App\Models\CFDossier;
-use App\Models\GroupeSolide;
+use App\Models\Customer\Customer;
+use App\Models\Association\Cycle;
+use App\Models\Association\Group;
 use DB;
 
 class DemandeTmpController extends Controller
@@ -21,7 +21,7 @@ class DemandeTmpController extends Controller
 
         $employe = \Auth::user()->employe;
 
-        $demandes = CFDemandePret::join('cf_dossiers','cf_demandes.dossier_id','cf_dossiers.id_dossier')
+        $demandes = MemberApplication::join('cf_dossiers','cf_demandes.dossier_id','cf_dossiers.id_dossier')
                         ->join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
                         ->join('tiers', 'cf_groupe_solidarites.id_groupe','tiers.id_tiers')
                         ->where('agent_id', $employe->id_employe)   
@@ -51,13 +51,13 @@ class DemandeTmpController extends Controller
     public function membre($id_dossier)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return back();
         }
 
-        $demandes = CFDemandePret::where('dossier_id', $id_dossier)->get();
+        $demandes = MemberApplication::where('dossier_id', $id_dossier)->get();
 
         $membres = [];
         $cart = [];
@@ -67,7 +67,7 @@ class DemandeTmpController extends Controller
             $membres[] = $demande->tiers_id;
         }
 
-        $tiers = Tiers::join('cf_membres','tiers.id_tiers','cf_membres.tiers_id')
+        $tiers = Customer::join('cf_membres','tiers.id_tiers','cf_membres.tiers_id')
                     ->leftJoin('cf_demandes','tiers.id_tiers','cf_demandes.tiers_id')
                     ->where('cf_membres.groupe_id', $dossier->groupe_id)
                     ->whereNotIn('id_tiers', $membres)
@@ -88,7 +88,7 @@ class DemandeTmpController extends Controller
     public function create($id_tiers, $id_dossier)
     {
 
-        $membre = Tiers::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
+        $membre = Customer::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
                         ->where('id_tiers', $id_tiers)
                         ->first();
 
@@ -96,9 +96,9 @@ class DemandeTmpController extends Controller
             return back();
         }
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
-        $groupe = GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
+        $groupe = Group::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
                         ->where('id_groupe', session('id_groupe'))
                         ->first();
 
@@ -135,7 +135,7 @@ class DemandeTmpController extends Controller
             'objet_pret'    =>$request->objet,
         ];
 
-        CFDemandePret::create($data);
+        MemberApplication::create($data);
 
         return redirect()->route('gp.demande.tmp.show', $request->dossierId);
 
@@ -149,13 +149,13 @@ class DemandeTmpController extends Controller
         $id_dossier)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return abort(404);
         }
 
-        $groupe = CFDemandePret::join('cf_dossiers', 'cf_demandes.dossier_id', 'cf_dossiers.id_dossier')
+        $groupe = MemberApplication::join('cf_dossiers', 'cf_demandes.dossier_id', 'cf_dossiers.id_dossier')
                         ->join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
                         ->where('id_dossier', session('id_groupe'))
                         ->first();
@@ -187,13 +187,13 @@ class DemandeTmpController extends Controller
 
         $id_demande = \App\Lib\CryptId::decrypt($id_demande);
 
-        $demande = CFDemandePret::where('id_demande', $id_demande)->first();
+        $demande = MemberApplication::where('id_demande', $id_demande)->first();
 
         if(empty($demande->id_demande)){
             return back();
         }
 
-        $membre = Tiers::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
+        $membre = Customer::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
                         ->where('id_tiers', $demande->tiers_id)
                         ->first();
 
@@ -201,7 +201,7 @@ class DemandeTmpController extends Controller
             return abort(404);
         }
 
-        $groupe = GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
+        $groupe = Group::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
                         ->where('id_groupe', session('id_groupe'))
                         ->first();
 
@@ -220,7 +220,7 @@ class DemandeTmpController extends Controller
 
         $id_demande = \App\Lib\CryptId::decrypt($id_demande);
 
-        $demande = CFDemandePret::where('id_demande', $id_demande)->first();
+        $demande = MemberApplication::where('id_demande', $id_demande)->first();
 
         $request->validate([
             'montant'   =>'required|numeric',
@@ -236,7 +236,7 @@ class DemandeTmpController extends Controller
             'objet_pret'    =>$request->objet,
         ];
 
-        CFDemandePret::where('id_demande', $id_demande)->update($data);
+        MemberApplication::where('id_demande', $id_demande)->update($data);
 
         return redirect()->route('gp.demande.tmp.show', $demande->dossier_id);
 
@@ -250,9 +250,9 @@ class DemandeTmpController extends Controller
         
        DB::transaction(function() use($request) {
 
-            CFDemandePret::where('dossier_id', $request->dossierId)->delete();
+            MemberApplication::where('dossier_id', $request->dossierId)->delete();
         
-            CFDossier::where('id_dossier', $request->dossierId)->delete();
+            Cycle::where('id_dossier', $request->dossierId)->delete();
 
        });
 

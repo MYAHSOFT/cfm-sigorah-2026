@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Groupement;
 
 use App\Http\Controllers\Controller;
-use App\Models\Employe;
+use App\Models\Bank\Employe;
 use App\Repositories\EmployeRepository;
 use Illuminate\Http\Request;
 

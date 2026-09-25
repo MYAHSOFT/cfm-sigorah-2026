@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Groupement;
 
-use App\Models\Caisse;
-use App\Models\Employe;
-use App\Models\GroupeSolide;
+use App\Models\Bank\Teller;
+use App\Models\Bank\Employe;
+use App\Models\Association\Group;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TiersCFRequest;
-use App\Models\CFFonctionGroupe;
-use App\Models\Compte;
+use App\Models\Association\MemberRole;
+use App\Models\Saving\AccountSaving;
 use App\Repositories\EmployeRepository;
 use App\Repositories\GroupeSolideMembreRepository;
 use App\Repositories\TiersRepository;
@@ -44,7 +44,7 @@ class GroupementController extends Controller
 
         $user = \Auth::user();
 
-        $groupes = GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
+        $groupes = Group::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
                         ->where('agent_id', $user->name)
                         ->where(function($query){
 
@@ -75,7 +75,7 @@ class GroupementController extends Controller
 
         if($request->page == 'membre'){
 
-            $groupe = GroupeSolide::orWhere('id_groupe', $request->codeGroupe)
+            $groupe = Group::orWhere('id_groupe', $request->codeGroupe)
                             ->orWhere('num_caisse', $request->codeGroupe)
                             ->first();
 
@@ -96,7 +96,7 @@ class GroupementController extends Controller
     public function checked($id_groupe)
     {
 
-        $groupe = GroupeSolide::where('id_groupe', $id_groupe)->first();
+        $groupe = Group::where('id_groupe', $id_groupe)->first();
 
         if(empty($groupe->id_groupe)){
             return redirect()->route('gt.index');
@@ -160,7 +160,7 @@ class GroupementController extends Controller
             return abort(404);
         }
 
-        $groupe = GroupeSolide::where('tiers_id', $id_tiers)->first();
+        $groupe = Group::where('tiers_id', $id_tiers)->first();
 
 
         if(!empty($groupe->id_groupe)){
@@ -197,7 +197,7 @@ class GroupementController extends Controller
                 return back();
             }
 
-            $groupe = GroupeSolide::create($data);
+            $groupe = Group::create($data);
 
             return redirect()->route('gp.groupe.show', $groupe->id_groupe);
 
@@ -234,7 +234,7 @@ class GroupementController extends Controller
             $tiers_data[$key] = (object)$attribue;
         }
 
-        $compte = Compte::where('tiers_id', $groupe->tiers_id)
+        $compte = AccountSaving::where('tiers_id', $groupe->tiers_id)
                         ->where('produit_id', config('compte')['produit_base'])
                         ->first();
 
@@ -274,9 +274,9 @@ class GroupementController extends Controller
 
         $bureau = $_membre_groupe->getBureau($groupe_id);
 
-        $fonctions = CFFonctionGroupe::get();
+        $fonctions = MemberRole::get();
 
-        $compte = Compte::join('cf_groupe_solidarites','ep_comptes.tiers_id','=','cf_groupe_solidarites.id_groupe')
+        $compte = AccountSaving::join('cf_groupe_solidarites','ep_comptes.tiers_id','=','cf_groupe_solidarites.id_groupe')
                         ->where('id_groupe', $id_groupe)
                         ->first();
         return view('groupement.gp_solidarites.membre',[

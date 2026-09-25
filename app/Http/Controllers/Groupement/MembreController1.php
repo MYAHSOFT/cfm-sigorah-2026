@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Groupement;
 
-use App\Models\Tiers;
-use App\Models\Caisse;
-use App\Models\GroupeSolide;
+use App\Models\Customer\Customer;
+use App\Models\Bank\Teller;
+use App\Models\Association\Group;
 use Illuminate\Http\Request;
-use App\Models\GroupeSolideMembre;
+use App\Models\Association\Member;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MembreRequest;
@@ -90,7 +90,7 @@ class MembreController extends Controller
     public function create()
     {
 
-        $groupe = GroupeSolide::where('id_groupe', session('id_groupe'))->first();
+        $groupe = Group::where('id_groupe', session('id_groupe'))->first();
 
         if(empty($groupe->id_groupe)){
             return abort(404);
@@ -98,7 +98,7 @@ class MembreController extends Controller
 
         $fields = json_decode(json_encode((object) \App\Lib\Forms::get('membrecf')));
 
-        $caisse = Caisse::where('agence_id', session('agence'))->first();
+        $caisse = Teller::where('agence_id', session('agence'))->first();
 
         return view("groupement.membres.create", [
             'main'  =>'groupement.membres.main',
@@ -133,9 +133,9 @@ class MembreController extends Controller
             $data['civilite'] = $data['genre'] == 'F' ? 'Mme' : 'Mr';
             $data['nationalite'] = 'MG';
 
-            $this->tiers = Tiers::create($data);
+            $this->tiers = Customer::create($data);
 
-            GroupeSolideMembre::create([
+            Member::create([
                 'tiers_id'  =>$data['id_tiers'],
                 'groupe_id'  =>$this->request->groupeId,
                 'date_entree'  =>$data['date_entree'],
@@ -163,13 +163,13 @@ class MembreController extends Controller
     public function show($id_tiers)
     {
 
-        $tiers = Tiers::where('id_tiers', $id_tiers)->first();
+        $tiers = Customer::where('id_tiers', $id_tiers)->first();
 
         if(empty($tiers)){
             return abort(404);
         }
 
-        $membre = GroupeSolideMembre::where('groupe_id', session('id_groupe'))
+        $membre = Member::where('groupe_id', session('id_groupe'))
                         ->where('tiers_id', $id_tiers)
                         ->first();
 
@@ -213,13 +213,13 @@ class MembreController extends Controller
     public function edit($id_tiers)
     {
 
-        $tiers = Tiers::where('id_tiers', $id_tiers)->first();
+        $tiers = Customer::where('id_tiers', $id_tiers)->first();
 
         if(empty($tiers)){
             return abort(404);
         }
 
-        $groupe = GroupeSolide::where('id_groupe', session('id_groupe'))->first();
+        $groupe = Group::where('id_groupe', session('id_groupe'))->first();
 
         $fields = \App\Lib\Forms::get('membrecf');
 
@@ -238,7 +238,7 @@ class MembreController extends Controller
 
         }
 
-        $caisse = Caisse::where('agence_id', session('agence'))->first();
+        $caisse = Teller::where('agence_id', session('agence'))->first();
 
         $fields = \App\Lib\Forms::show($tiers, 'membrecf');
 
@@ -268,7 +268,7 @@ class MembreController extends Controller
 
         unset($data['caisse_id']);
 
-        Tiers::where('id_tiers', $id_tiers)->update($data);
+        Customer::where('id_tiers', $id_tiers)->update($data);
 
         session()->flash(
             'success',
@@ -297,7 +297,7 @@ class MembreController extends Controller
         try {
 
 
-            $tiers = Tiers::where('id_tiers', $id_tiers)->first();
+            $tiers = Customer::where('id_tiers', $id_tiers)->first();
 
             $validator = Validator::make($request->all(), [
                     'file'  =>'required|file|image|mimes:jpg,png'
@@ -347,7 +347,7 @@ class MembreController extends Controller
 
             $data = [$columns[$request->objetFile]=>$name];
 
-            Tiers::where('id_tiers', $tiers->id_tiers)->update($data);
+            Customer::where('id_tiers', $tiers->id_tiers)->update($data);
 
             return redirect($request->urlModule);
 

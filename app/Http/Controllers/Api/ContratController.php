@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CFDossier;
-use App\Models\ContratPretGroupe;
-use App\Models\GroupeSolide;
+use App\Models\Association\Cycle;
+use App\Models\Association\GroupLoanContract;
+use App\Models\Association\Group;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -14,13 +14,13 @@ use Illuminate\Support\Facades\DB;
 class ContratController extends ApiController
 {
     /** Contrats d'un groupement (option ?annee=YYYY|all). */
-    public function index(Request $request, GroupeSolide $groupe)
+    public function index(Request $request, Group $groupe)
     {
         $this->authorize('access', $groupe);
 
         $annee = $request->input('annee', date('Y'));
 
-        $contrats = ContratPretGroupe::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
+        $contrats = GroupLoanContract::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
             ->join('cf_dossiers', 'cf_contrat_pret_groupes.dossier_id', 'cf_dossiers.id_dossier')
             ->where('cf_dossiers.groupe_id', $groupe->id_groupe)
             ->when($annee !== 'all', fn ($q) => $q->whereYear('echeance', $annee))
@@ -34,11 +34,11 @@ class ContratController extends ApiController
     }
 
     /** Contrats détaillés d'un dossier. */
-    public function showByDossier(CFDossier $dossier)
+    public function showByDossier(Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
-        $contrats = ContratPretGroupe::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
+        $contrats = GroupLoanContract::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
             ->join('cd_demandes', 'cd_contrats.demande_id', 'cd_demandes.id_demande')
             ->join('tiers', 'cd_demandes.tiers_id', 'tiers.id_tiers')
             ->where('dossier_id', $dossier->id_dossier)
@@ -48,7 +48,7 @@ class ContratController extends ApiController
             'dossier'     => $dossier,
             'contrats'    => $contrats,
             'nb_contrat'  => $contrats->count(),
-            'sum_contrat' => ContratPretGroupe::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
+            'sum_contrat' => GroupLoanContract::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
                 ->where('dossier_id', $dossier->id_dossier)->sum('mtt_capital'),
         ]);
     }

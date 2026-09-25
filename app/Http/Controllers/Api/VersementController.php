@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CalendrierCycle;
-use App\Models\CFDossier;
-use App\Models\ContratPretGroupe;
-use App\Models\Echeancier;
-use App\Models\Tiers;
+use App\Models\Association\CycleCalendar;
+use App\Models\Association\Cycle;
+use App\Models\Association\GroupLoanContract;
+use App\Models\Association\GroupSchedule;
+use App\Models\Customer\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -35,11 +35,11 @@ class VersementController extends ApiController
     }
 
     /** Échéancier agrégé d'un dossier. */
-    public function echeancier(CFDossier $dossier)
+    public function echeancier(Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
-        $echeanciers = Echeancier::join('cf_contrat_pret_groupes', 'cf_echeanciers.pret_id', 'cf_contrat_pret_groupes.pret_id')
+        $echeanciers = GroupSchedule::join('cf_contrat_pret_groupes', 'cf_echeanciers.pret_id', 'cf_contrat_pret_groupes.pret_id')
             ->where('dossier_id', $dossier->id_dossier)
             ->select('dossier_id', 'date_oper', DB::raw('SUM(montant) montant'))
             ->groupBy('dossier_id', 'date_oper')
@@ -48,25 +48,25 @@ class VersementController extends ApiController
         return $this->data([
             'dossier'      => $dossier,
             'echeanciers'  => $echeanciers,
-            'sum_echeance' => CalendrierCycle::where('dossier_id', $dossier->id_dossier)->sum('montant'),
+            'sum_echeance' => CycleCalendar::where('dossier_id', $dossier->id_dossier)->sum('montant'),
         ]);
     }
 
     /** État d'une réunion : membres + montant d'échéance attendu par membre. ?reunion=YYYY-MM-DD */
-    public function reunion(Request $request, CFDossier $dossier)
+    public function reunion(Request $request, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
         $reunion = $request->input('reunion');
 
-        $membres = Tiers::join('cf_membres', 'tiers.id_tiers', '=', 'cf_membres.tiers_id')
+        $membres = Customer::join('cf_membres', 'tiers.id_tiers', '=', 'cf_membres.tiers_id')
             ->where('groupe_id', $dossier->groupe_id)
             ->where('status', 'A')
             ->orderBy('profil')
             ->orderBy('nom_tiers')
             ->get();
 
-        $echMembres = Echeancier::join('cf_contrat_pret_groupes', 'cf_echeanciers.pret_id', 'cf_contrat_pret_groupes.pret_id')
+        $echMembres = GroupSchedule::join('cf_contrat_pret_groupes', 'cf_echeanciers.pret_id', 'cf_contrat_pret_groupes.pret_id')
             ->join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
             ->join('cd_demandes', 'cd_contrats.demande_id', 'cd_demandes.id_demande')
             ->where('date_oper', $reunion)
@@ -90,7 +90,7 @@ class VersementController extends ApiController
      * Enregistre les versements d'une réunion (remplace panier + OperationController::store).
      * Body: { date_oper, lignes:[{folio, remboursement?, depot?, retrait?, penalite?}] }
      */
-    public function store(Request $request, CFDossier $dossier)
+    public function store(Request $request, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 

@@ -1,7 +1,7 @@
 <?php
 namespace App\Repositories;
 
-use App\Models\CFDossier;
+use App\Models\Association\Cycle;
 
 class CFDossierRepository
 {
@@ -9,7 +9,7 @@ class CFDossierRepository
     public function find($id_dossier)
     {
 
-        return CFDossier::join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
+        return Cycle::join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
                 ->join('tiers','cf_groupe_solidarites.id_groupe','tiers.id_tiers')
                 ->where('id_dossier', $id_dossier)
                 ->first();
@@ -21,12 +21,12 @@ class CFDossierRepository
 
         $cycle = null;
 
-        $lastCycle = CFDossier::where('statut', '=', 'O')
+        $lastCycle = Cycle::where('statut', '=', 'O')
                         ->where('groupe_id', $id_groupe)
                         ->max('debut_cycle');
 
         if(!empty($lastCycle)){
-            $cycle = CFDossier::join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
+            $cycle = Cycle::join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
                         ->join('tiers','cf_groupe_solidarites.id_groupe','tiers.id_tiers')
                         ->where('id_groupe', $id_groupe)
                         ->where('debut_cycle', $lastCycle)
@@ -41,7 +41,7 @@ class CFDossierRepository
     public function paginate($per_page = 10)
     {
 
-        return CFDossier::join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
+        return Cycle::join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
                 ->join('tiers','cf_groupe_solidarites.id_groupe','tiers.id_tiers')
                 ->where(function($query){
 
@@ -67,7 +67,7 @@ class CFDossierRepository
     public function getByGroupe($id_groupe)
     {
 
-        return CFDossier::join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
+        return Cycle::join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
                 ->join('tiers','cf_groupe_solidarites.id_groupe','tiers.id_tiers')
                 ->where('id_groupe', $id_groupe)
                 ->where('statut','<>','A')

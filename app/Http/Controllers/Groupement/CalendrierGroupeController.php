@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Groupement;
 
-use App\Models\CFDossier;
-use App\Models\CFEcheancier;
-use App\Models\Calendrier;
-use App\Models\CDOperation;
+use App\Models\Association\Cycle;
+use App\Models\Association\GroupSchedule;
+use App\Models\Lending\ScheduleLoan;
+use App\Models\Lending\TransactionLoan;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Models\ContratPretGroupe;
+use App\Models\Association\GroupLoanContract;
 use App\Repositories\CFDossierRepository;
 use App\Repositories\CFCalendierCyclesRepository;
 use App\Repositories\DemandePretGroupeRepository;
@@ -26,7 +26,7 @@ class CalendrierGroupeController extends Controller
 
         $user = \Auth::user();
 
-        $encours = CDOperation::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', 'cf_contrat_pret_groupes.pret_id')
+        $encours = TransactionLoan::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', 'cf_contrat_pret_groupes.pret_id')
                             ->join('cf_groupe_solidarites', 'cf_contrat_pret_groupes.groupe_id','cf_groupe_solidarites.id_groupe')
                             ->join('cf_dossiers','cf_contrat_pret_groupes.dossier_id','cf_dossiers.id_dossier')
                             ->join('tiers','cf_groupe_solidarites.id_groupe','tiers.id_tiers')
@@ -112,7 +112,7 @@ class CalendrierGroupeController extends Controller
 
         $groupe = $_dossier->find($request->dossier);
 
-        $octrois = CDOperation::join('cf_contrat_pret_groupes','cd_operations.pret_id','=','cf_contrat_pret_groupes.pret_id')
+        $octrois = TransactionLoan::join('cf_contrat_pret_groupes','cd_operations.pret_id','=','cf_contrat_pret_groupes.pret_id')
                         ->where('dossier_id', $request->dossier)
                         ->where('debit','>',0)
                         ->get();
@@ -150,7 +150,7 @@ class CalendrierGroupeController extends Controller
 
         DB::table('cf_calendier_cycles')->insert($cals);
         DB::table('cd_calendriers')->insert($echeanciers);
-        CFDossier::where('id_dossier', $request->dossier)
+        Cycle::where('id_dossier', $request->dossier)
                 ->update([
                     'fin_cycle' =>$echeance,
                     'date_prev_remb' =>$echeance,
@@ -190,7 +190,7 @@ class CalendrierGroupeController extends Controller
             return redirect()->route('gp.calendrier.create', $id_dossier);
         }
 
-        $octrois = CDOperation::join('cf_contrat_pret_groupes','cd_operations.pret_id','=','cf_contrat_pret_groupes.pret_id')
+        $octrois = TransactionLoan::join('cf_contrat_pret_groupes','cd_operations.pret_id','=','cf_contrat_pret_groupes.pret_id')
                         ->where('dossier_id', $id_dossier)
                         ->where('debit','>',0)
                         ->select('dossier_id', DB::raw("SUM(debit) debit, COUNT(*) nb_contrat"))
@@ -241,7 +241,7 @@ class CalendrierGroupeController extends Controller
 
         if($request->isMethod('post')){
 
-            // $dossier = CFDossier::where('id_dossier', $request->dossierId)->first();
+            // $dossier = Cycle::where('id_dossier', $request->dossierId)->first();
             Search::set('cf_calendrier', $request->all());
 
             $_demande = new DemandePretGroupeRepository;
@@ -293,7 +293,7 @@ class CalendrierGroupeController extends Controller
     public function cart(Request $request)
     {
 
-        $dossier = CFDossier::where('id_dossier', $request->dossierId)->first();
+        $dossier = Cycle::where('id_dossier', $request->dossierId)->first();
 
         $_demande = new DemandePretGroupeRepository;
 
@@ -327,7 +327,7 @@ class CalendrierGroupeController extends Controller
             return redirect()->route('gp.calendrier.create', $id_dossier);
         }
 
-        $octrois = CDOperation::join('cf_contrat_pret_groupes','cd_operations.pret_id','=','cf_contrat_pret_groupes.pret_id')
+        $octrois = TransactionLoan::join('cf_contrat_pret_groupes','cd_operations.pret_id','=','cf_contrat_pret_groupes.pret_id')
                         ->where('dossier_id', $id_dossier)
                         ->where('debit','>',0)
                         ->select('dossier_id', DB::raw("SUM(debit) debit, COUNT(*) nb_contrat"))
@@ -354,9 +354,9 @@ class CalendrierGroupeController extends Controller
     public function update(Request $request)
     {
         
-        $dossier = CFDossier::where('id_dossier', $request->dossierId)->first();
+        $dossier = Cycle::where('id_dossier', $request->dossierId)->first();
 
-        $contrats = ContratPretGroupe::join('cd_contrats','cf_contrat_pret_groupes.pret_id','=','cd_contrats.id_pret')
+        $contrats = GroupLoanContract::join('cd_contrats','cf_contrat_pret_groupes.pret_id','=','cd_contrats.id_pret')
                             ->where('dossier_id', $dossier->id_dossier)
                             ->get();
 
@@ -417,15 +417,15 @@ class CalendrierGroupeController extends Controller
 
             DB::table('cf_calendier_cycles')->insert($data['cycle']);
 
-            Calendrier::whereIn('pret_id',$collectPretId)->delete();
+            ScheduleLoan::whereIn('pret_id',$collectPretId)->delete();
 
-            Calendrier::insert($data['calendrier']);
+            ScheduleLoan::insert($data['calendrier']);
 
-            CFEcheancier::whereIn('pret_id',$collectPretId)->delete();
+            GroupSchedule::whereIn('pret_id',$collectPretId)->delete();
 
-            CFEcheancier::insert($data['echeancier']);
+            GroupSchedule::insert($data['echeancier']);
 
-            CFDossier::where('id_dossier', $dossier->id_dossier)->update([
+            Cycle::where('id_dossier', $dossier->id_dossier)->update([
                 'mode_reunion'  =>$request->mode,
                 'jour_reunion'  =>$request->jour,
                 'nb_reunion'  =>config('groupement.nb_reunion')[$request->mode],

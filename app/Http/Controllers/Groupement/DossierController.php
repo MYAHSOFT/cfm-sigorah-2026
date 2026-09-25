@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Groupement;
 
 use DB;
-use App\Models\CFDossier;
-use App\Models\DemandePret;
-use App\Models\CFDemandePret;
-use App\Models\GroupeSolide;
+use App\Models\Association\Cycle;
+use App\Models\Lending\ApplicationLoan;
+use App\Models\Association\MemberApplication;
+use App\Models\Association\Group;
 use Illuminate\Http\Request;
-use App\Models\ContratPretGroupe;
-use App\Models\DemandePretGroupe;
+use App\Models\Association\GroupLoanContract;
+use App\Models\Association\GroupLoanApplication;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DossierRequest;
 use App\Repositories\CFDossierRepository;
@@ -38,12 +38,12 @@ class DossierController extends Controller
         $user = \Auth::user();
 
 
-        $groupes = GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
+        $groupes = Group::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
                         ->where('agent_id', $user->name)
                         ->orderBy('nom_tiers')
                         ->get();
 
-        $dossiers = CFDossier::join('cf_demande_pret_groupes', 'cf_dossiers.id_dossier','cf_demande_pret_groupes.dossier_id')
+        $dossiers = Cycle::join('cf_demande_pret_groupes', 'cf_dossiers.id_dossier','cf_demande_pret_groupes.dossier_id')
                         ->join('cd_demandes', 'cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
                         ->where('cf_dossiers.groupe_id', session('id_groupe'))
                         ->where(function($query){
@@ -75,7 +75,7 @@ class DossierController extends Controller
 
         }
 
-        $nb_contrat_all = ContratPretGroupe::where('groupe_id', session('id_groupe'))
+        $nb_contrat_all = GroupLoanContract::where('groupe_id', session('id_groupe'))
                                         ->whereNotIn('dossier_id', $docs)
                                         ->select('dossier_id')
                                         ->groupBy('dossier_id')
@@ -93,7 +93,7 @@ class DossierController extends Controller
     protected function nbDossierByYear($year)
     {
 
-        return CFDossier::where('cf_dossiers.groupe_id', session('id_groupe'))
+        return Cycle::where('cf_dossiers.groupe_id', session('id_groupe'))
                             ->whereYear('debut_cycle', '=' ,$year)
                             ->count();
 
@@ -130,7 +130,7 @@ class DossierController extends Controller
             return abort(404);
         }
 
-        $groupe = GroupeSolide::where('id_groupe', session('id_groupe'))
+        $groupe = Group::where('id_groupe', session('id_groupe'))
                         ->first();
 
         if(empty($groupe)){
@@ -217,7 +217,7 @@ class DossierController extends Controller
             'animatrice'    =>$user->name,
         ];
 
-        // CFDossier::create($this->dossier);
+        // Cycle::create($this->dossier);
 
         //DEMANDE
 
@@ -244,9 +244,9 @@ class DossierController extends Controller
 
                     }
 
-                    CFDossier::create($dossier);
+                    Cycle::create($dossier);
 
-                    CFDemandePret::insert($demandes);
+                    MemberApplication::insert($demandes);
 
                 });
 
@@ -305,7 +305,7 @@ class DossierController extends Controller
             'animatrice'    =>$user->name,
         ];
 
-        // CFDossier::create($this->dossier);
+        // Cycle::create($this->dossier);
 
         //DEMANDE
 
@@ -320,7 +320,7 @@ class DossierController extends Controller
 
                     $caisse_id = config('groupement.caisseId');
 
-                    CFDossier::create($dossier);
+                    Cycle::create($dossier);
 
                     foreach ($data as $value) {
 
@@ -338,8 +338,8 @@ class DossierController extends Controller
                         $demande["objet_pret"] = $value["objet"];
                         $demande["duree_mois"] = config('groupement.duree_pret');
 
-                        DemandePret::create($demande);
-                        DemandePretGroupe::create([
+                        ApplicationLoan::create($demande);
+                        GroupLoanApplication::create([
                             'ref_dde'   =>$demande["id_demande"],
                             'groupe_id' =>$this->dossier['groupe_id'],
                             'dossier_id'  =>$this->dossier['id_dossier'],
@@ -420,7 +420,7 @@ class DossierController extends Controller
         $id_dossier)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return back();
@@ -430,15 +430,15 @@ class DossierController extends Controller
 
         $dossier_data = [];
 
-        $demandeGroupe = DemandePretGroupe::where('dossier_id', $id_dossier)->first();
+        $demandeGroupe = GroupLoanApplication::where('dossier_id', $id_dossier)->first();
 
         if(!empty($demandeGroupe->dossier_id)){
 
-            $sum_demande = DemandePret::join('cf_demande_pret_groupes','cd_demandes.id_demande','cf_demande_pret_groupes.ref_dde')
+            $sum_demande = ApplicationLoan::join('cf_demande_pret_groupes','cd_demandes.id_demande','cf_demande_pret_groupes.ref_dde')
                                     ->where('dossier_id', $id_dossier)
                                     ->sum('mtt_capital');
     
-            $nb_demande = DemandePret::join('cf_demande_pret_groupes','cd_demandes.id_demande','cf_demande_pret_groupes.ref_dde')
+            $nb_demande = ApplicationLoan::join('cf_demande_pret_groupes','cd_demandes.id_demande','cf_demande_pret_groupes.ref_dde')
                                     ->where('dossier_id', $id_dossier)
                                     ->count();
 
@@ -502,10 +502,10 @@ class DossierController extends Controller
             'statut'    =>'O',
         ];
 
-        CFDossier::where('id_dossier', $id_dossier)
+        Cycle::where('id_dossier', $id_dossier)
                 ->update($dossier);
 
-        $demandeGroupe = DemandePretGroupe::where('dossier_id', $id_dossier)->first();
+        $demandeGroupe = GroupLoanApplication::where('dossier_id', $id_dossier)->first();
 
         $url = route('gp.demande.tmp.show', $id_dossier);
 

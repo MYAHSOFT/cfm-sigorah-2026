@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CFDossier;
-use App\Models\CFOperation;
-use App\Models\ContratPretGroupe;
-use App\Models\Tiers;
+use App\Models\Association\Cycle;
+use App\Models\Association\MeetingOperation;
+use App\Models\Association\GroupLoanContract;
+use App\Models\Customer\Customer;
 use Illuminate\Http\Request;
 
 /**
@@ -16,15 +16,15 @@ class OperationEditController extends ApiController
 {
     public function show(string $idOper)
     {
-        $operation = CFOperation::where('id_oper', $idOper)->firstOrFail();
-        $dossier = CFDossier::findOrFail($operation->dossier_id);
+        $operation = MeetingOperation::where('id_oper', $idOper)->firstOrFail();
+        $dossier = Cycle::findOrFail($operation->dossier_id);
         $this->authorize('access', $dossier);
 
-        $membre = Tiers::join('cf_membres', 'tiers.id_tiers', '=', 'cf_membres.tiers_id')
+        $membre = Customer::join('cf_membres', 'tiers.id_tiers', '=', 'cf_membres.tiers_id')
             ->where('id_tiers', $operation->tiers_id)
             ->first();
 
-        $contrat = ContratPretGroupe::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
+        $contrat = GroupLoanContract::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
             ->join('cd_demandes', 'cd_contrats.demande_id', 'cd_demandes.id_demande')
             ->where('dossier_id', $operation->dossier_id)
             ->where('tiers_id', $operation->tiers_id)
@@ -40,8 +40,8 @@ class OperationEditController extends ApiController
 
     public function update(Request $request, string $idOper)
     {
-        $operation = CFOperation::where('id_oper', $idOper)->firstOrFail();
-        $dossier = CFDossier::findOrFail($operation->dossier_id);
+        $operation = MeetingOperation::where('id_oper', $idOper)->firstOrFail();
+        $dossier = Cycle::findOrFail($operation->dossier_id);
         $this->authorize('access', $dossier);
 
         $data = $request->validate([

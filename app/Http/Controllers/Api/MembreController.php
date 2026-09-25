@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CFFonctionGroupe;
-use App\Models\GroupeSolide;
-use App\Models\GroupeSolideMembre;
-use App\Models\Tiers;
+use App\Models\Association\MemberRole;
+use App\Models\Association\Group;
+use App\Models\Association\Member;
+use App\Models\Customer\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -16,13 +16,13 @@ use Illuminate\Support\Facades\DB;
 class MembreController extends ApiController
 {
     /** Membres actifs (ou par statut) d'un groupement. */
-    public function index(Request $request, GroupeSolide $groupe)
+    public function index(Request $request, Group $groupe)
     {
         $this->authorize('access', $groupe);
 
         $statut = strtoupper($request->input('statut', 'A'));
 
-        $membres = Tiers::join('cf_membres', 'tiers.id_tiers', '=', 'cf_membres.tiers_id')
+        $membres = Customer::join('cf_membres', 'tiers.id_tiers', '=', 'cf_membres.tiers_id')
             ->where('groupe_id', $groupe->id_groupe)
             ->where('status', $statut)
             ->when($request->filled('q'), function ($query) use ($request) {
@@ -40,11 +40,11 @@ class MembreController extends ApiController
     }
 
     /** Fiche d'un membre. */
-    public function show(GroupeSolide $groupe, string $tiers)
+    public function show(Group $groupe, string $tiers)
     {
         $this->authorize('access', $groupe);
 
-        $membre = Tiers::join('cf_membres', 'tiers.id_tiers', '=', 'cf_membres.tiers_id')
+        $membre = Customer::join('cf_membres', 'tiers.id_tiers', '=', 'cf_membres.tiers_id')
             ->where('cf_membres.groupe_id', $groupe->id_groupe)
             ->where('tiers.id_tiers', $tiers)
             ->firstOrFail();
@@ -53,7 +53,7 @@ class MembreController extends ApiController
     }
 
     /** Création d'un membre (Tiers PP + rattachement au groupe). */
-    public function store(Request $request, GroupeSolide $groupe)
+    public function store(Request $request, Group $groupe)
     {
         $this->authorize('access', $groupe);
 
@@ -76,9 +76,9 @@ class MembreController extends ApiController
             $data['civilite']    = $data['genre'] === 'F' ? 'Mme' : 'Mr';
             $data['nationalite'] = 'MG';
 
-            $tiers = Tiers::create($data);
+            $tiers = Customer::create($data);
 
-            GroupeSolideMembre::create([
+            Member::create([
                 'tiers_id'    => $data['id_tiers'],
                 'groupe_id'   => $groupe->id_groupe,
                 'date_entree' => $data['date_entree'],
@@ -93,11 +93,11 @@ class MembreController extends ApiController
     }
 
     /** Mise à jour d'un membre. */
-    public function update(Request $request, GroupeSolide $groupe, string $tiers)
+    public function update(Request $request, Group $groupe, string $tiers)
     {
         $this->authorize('access', $groupe);
 
-        $membre = Tiers::where('id_tiers', $tiers)->firstOrFail();
+        $membre = Customer::where('id_tiers', $tiers)->firstOrFail();
 
         $data = $request->validate([
             'nom_tiers'    => ['sometimes', 'string', 'max:120'],
@@ -115,7 +115,7 @@ class MembreController extends ApiController
     }
 
     /** Upload d'une image (photo | signature | cin). */
-    public function upload(Request $request, GroupeSolide $groupe, string $tiers)
+    public function upload(Request $request, Group $groupe, string $tiers)
     {
         $this->authorize('access', $groupe);
 
@@ -124,7 +124,7 @@ class MembreController extends ApiController
             'file'  => ['required', 'file', 'image', 'mimes:jpg,jpeg,png'],
         ]);
 
-        $membre = Tiers::where('id_tiers', $tiers)->firstOrFail();
+        $membre = Customer::where('id_tiers', $tiers)->firstOrFail();
 
         $name = $tiers . '_' . $request->file('file')->hashName();
         $request->file('file')->storeAs('tiers/' . $request->input('objet'), $name, 'img');
@@ -136,13 +136,13 @@ class MembreController extends ApiController
     }
 
     /** Réintégration de membres bloqués (ex-MembreInController). Body: { folios: [...] }. */
-    public function reintegrer(Request $request, GroupeSolide $groupe)
+    public function reintegrer(Request $request, Group $groupe)
     {
         $this->authorize('access', $groupe);
 
         $folios = $request->validate(['folios' => ['required', 'array', 'min:1']])['folios'];
 
-        GroupeSolideMembre::where('groupe_id', $groupe->id_groupe)
+        Member::where('groupe_id', $groupe->id_groupe)
             ->whereIn('tiers_id', $folios)
             ->update(['status' => 'A']);
 
@@ -150,13 +150,13 @@ class MembreController extends ApiController
     }
 
     /** Blocage / sortie de membres (ex-MembreOutController, remplace le panier session). Body: { folios: [...] }. */
-    public function bloquer(Request $request, GroupeSolide $groupe)
+    public function bloquer(Request $request, Group $groupe)
     {
         $this->authorize('access', $groupe);
 
         $folios = $request->validate(['folios' => ['required', 'array', 'min:1']])['folios'];
 
-        GroupeSolideMembre::where('groupe_id', $groupe->id_groupe)
+        Member::where('groupe_id', $groupe->id_groupe)
             ->whereIn('tiers_id', $folios)
             ->update(['status' => 'D', 'fonction_id' => 'MBR']);
 

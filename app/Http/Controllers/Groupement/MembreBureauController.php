@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Groupement;
 
 use App\Http\Controllers\Controller;
-use App\Models\CFMembre;
-use App\Models\Tiers;
+use App\Models\Association\Member;
+use App\Models\Customer\Customer;
 use Illuminate\Http\Request;
 
 class MembreBureauController extends Controller
@@ -17,7 +17,7 @@ class MembreBureauController extends Controller
     public function index()
     {
 
-        $tiers = Tiers::join('cf_membres', 'tiers.id_tiers', 'cf_membres.tiers_id')
+        $tiers = Customer::join('cf_membres', 'tiers.id_tiers', 'cf_membres.tiers_id')
                         ->where('groupe_id', session('id_groupe'))
                         ->where('fonction_id', '<>', 'MBR')
                         ->get();
@@ -69,7 +69,7 @@ class MembreBureauController extends Controller
     public function create($id_fonction)
     {
 
-        $tiers = Tiers::join('cf_membres', 'tiers.id_tiers', 'cf_membres.tiers_id')
+        $tiers = Customer::join('cf_membres', 'tiers.id_tiers', 'cf_membres.tiers_id')
                         ->where('groupe_id', session('id_groupe'))
                         ->where('status', 'A')
                         ->get();
@@ -90,13 +90,13 @@ class MembreBureauController extends Controller
     public function store($id_tiers, $id_fonction)
     {
 
-        CFMembre::where('groupe_id', session('id_groupe'))
+        Member::where('groupe_id', session('id_groupe'))
                 ->where('fonction_id', $id_fonction)
                 ->update([
                     'fonction_id'   =>'MBR'
                 ]);
 
-        CFMembre::where('tiers_id', $id_tiers)
+        Member::where('tiers_id', $id_tiers)
                 ->where('groupe_id', session('id_groupe'))
                 ->update([
                     'fonction_id'   =>$id_fonction

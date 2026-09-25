@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Groupement;
 
-use App\Models\Compte;
+use App\Models\Saving\AccountSaving;
 use Illuminate\Http\Request;
-use App\Models\CFFonctionGroupe;
+use App\Models\Association\MemberRole;
 use App\Http\Controllers\Controller;
-use App\Models\GroupeSolide;
-use App\Models\GroupeSolideMembre;
+use App\Models\Association\Group;
+use App\Models\Association\Member;
 use App\Repositories\GroupeSolideRepository;
 use App\Repositories\GroupeSolideMembreRepository;
 
@@ -25,9 +25,9 @@ class MembreOutController extends Controller
         $tiers = [];
         $president = null;
 
-        $groupe = GroupeSolide::where('id_groupe', session('id_groupe'))->first();
+        $groupe = Group::where('id_groupe', session('id_groupe'))->first();
 
-        $tiers = GroupeSolideMembre::join('tiers', 'cf_membres.tiers_id', 'tiers.id_tiers')
+        $tiers = Member::join('tiers', 'cf_membres.tiers_id', 'tiers.id_tiers')
                             ->where('groupe_id', session('id_groupe'))
                             ->where('status', 'D')
                             ->orderBy('nom_tiers','asc')
@@ -63,9 +63,9 @@ class MembreOutController extends Controller
         $tiers = [];
         $president = null;
 
-        $groupe = GroupeSolide::where('id_groupe', session('id_groupe'))->first();
+        $groupe = Group::where('id_groupe', session('id_groupe'))->first();
 
-        $tiers = GroupeSolideMembre::join('tiers', 'cf_membres.tiers_id', 'tiers.id_tiers')
+        $tiers = Member::join('tiers', 'cf_membres.tiers_id', 'tiers.id_tiers')
                             ->where('groupe_id', session('id_groupe'))
                             ->where('status', 'A')
                             ->orderBy('nom_tiers','asc')
@@ -113,9 +113,9 @@ class MembreOutController extends Controller
             return redirect()->route('gp.mbre.out.create');
         }
 
-        $groupe = GroupeSolide::where('id_groupe', session('id_groupe'))->first();
+        $groupe = Group::where('id_groupe', session('id_groupe'))->first();
 
-        $tiers = GroupeSolideMembre::join('tiers', 'cf_membres.tiers_id', 'tiers.id_tiers')
+        $tiers = Member::join('tiers', 'cf_membres.tiers_id', 'tiers.id_tiers')
                             ->whereIn('id_tiers', $membre_bloque)
                             ->orderBy('nom_tiers','asc')
                             ->get();
@@ -136,7 +136,7 @@ class MembreOutController extends Controller
 
         $membre_bloque = session()->has('membre_bloque') ? session('membre_bloque') : [];
 
-        GroupeSolideMembre::where('groupe_id', session('id_groupe'))
+        Member::where('groupe_id', session('id_groupe'))
                     ->whereIn('tiers_id', $membre_bloque)
                     ->update([
                         'status'=>'D',

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CFDemandePret;
-use App\Models\CFDossier;
-use App\Models\Tiers;
+use App\Models\Association\MemberApplication;
+use App\Models\Association\Cycle;
+use App\Models\Customer\Customer;
 use App\Repositories\DemandePretTmpGroupeRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,7 @@ class DemandeCycleController extends ApiController
     /** File des demandes-cycle de l'animatrice. */
     public function index()
     {
-        $demandes = CFDemandePret::join('cf_dossiers', 'cf_demandes.dossier_id', 'cf_dossiers.id_dossier')
+        $demandes = MemberApplication::join('cf_dossiers', 'cf_demandes.dossier_id', 'cf_dossiers.id_dossier')
             ->join('cf_groupe_solidarites', 'cf_dossiers.groupe_id', 'cf_groupe_solidarites.id_groupe')
             ->join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
             ->where('agent_id', $this->employe()->id_employe)
@@ -34,13 +34,13 @@ class DemandeCycleController extends ApiController
     }
 
     /** Membres du groupe du dossier n'ayant pas encore de demande-cycle. */
-    public function membresEligibles(CFDossier $dossier)
+    public function membresEligibles(Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
-        $deja = CFDemandePret::where('dossier_id', $dossier->id_dossier)->pluck('tiers_id')->all();
+        $deja = MemberApplication::where('dossier_id', $dossier->id_dossier)->pluck('tiers_id')->all();
 
-        $tiers = Tiers::join('cf_membres', 'tiers.id_tiers', 'cf_membres.tiers_id')
+        $tiers = Customer::join('cf_membres', 'tiers.id_tiers', 'cf_membres.tiers_id')
             ->where('cf_membres.groupe_id', $dossier->groupe_id)
             ->whereNotIn('id_tiers', $deja)
             ->select('tiers.*')
@@ -50,7 +50,7 @@ class DemandeCycleController extends ApiController
     }
 
     /** Détail des demandes-cycle d'un dossier. */
-    public function showByDossier(DemandePretTmpGroupeRepository $repo, CFDossier $dossier)
+    public function showByDossier(DemandePretTmpGroupeRepository $repo, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
@@ -63,7 +63,7 @@ class DemandeCycleController extends ApiController
     }
 
     /** Ajoute une demande-cycle. Body: { folio, montant, objet }. */
-    public function store(Request $request, CFDossier $dossier)
+    public function store(Request $request, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
@@ -73,7 +73,7 @@ class DemandeCycleController extends ApiController
             'objet'   => ['required', 'string'],
         ]);
 
-        $demande = CFDemandePret::create([
+        $demande = MemberApplication::create([
             'dossier_id'  => $dossier->id_dossier,
             'tiers_id'    => $data['folio'],
             'groupe_id'   => $dossier->groupe_id,
@@ -87,8 +87,8 @@ class DemandeCycleController extends ApiController
     /** Modifie une demande-cycle. */
     public function update(Request $request, string $demande)
     {
-        $row = CFDemandePret::where('id_demande', $demande)->firstOrFail();
-        $dossier = CFDossier::findOrFail($row->dossier_id);
+        $row = MemberApplication::where('id_demande', $demande)->firstOrFail();
+        $dossier = Cycle::findOrFail($row->dossier_id);
         $this->authorize('access', $dossier);
 
         $data = $request->validate([
@@ -102,13 +102,13 @@ class DemandeCycleController extends ApiController
     }
 
     /** Supprime toutes les demandes-cycle d'un dossier + le dossier (mirroir web). */
-    public function destroy(CFDossier $dossier)
+    public function destroy(Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
         DB::transaction(function () use ($dossier) {
-            CFDemandePret::where('dossier_id', $dossier->id_dossier)->delete();
-            CFDossier::where('id_dossier', $dossier->id_dossier)->delete();
+            MemberApplication::where('dossier_id', $dossier->id_dossier)->delete();
+            Cycle::where('id_dossier', $dossier->id_dossier)->delete();
         });
 
         return $this->message('Dossier et demandes-cycle supprimés.');

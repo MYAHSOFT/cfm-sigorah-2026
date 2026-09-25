@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Groupement;
 
 use DB;
-use App\Models\Tiers;
-use App\Models\CFDossier;
-use App\Models\CFOperation;
-use App\Models\ContratPret;
+use App\Models\Customer\Customer;
+use App\Models\Association\Cycle;
+use App\Models\Association\MeetingOperation;
+use App\Models\Lending\ContractLoan;
 use Illuminate\Http\Request;
-use App\Models\OperationGroupe;
-use App\Models\ContratPretGroupe;
+use App\Models\Association\GroupLoanContract;
 use App\Http\Controllers\Controller;
 use App\Repositories\TiersRepository;
 use App\Repositories\CFDossierRepository;
@@ -29,7 +28,7 @@ class OperationController extends Controller
     public function index()
     {
 
-        $operations = CFOperation::join('cf_dossiers', 'cf_operations.dossier_id', 'cf_dossiers.id_dossier')
+        $operations = MeetingOperation::join('cf_dossiers', 'cf_operations.dossier_id', 'cf_dossiers.id_dossier')
                             ->select('id_dossier')
                             ->where('groupe_id', session('id_groupe'))
                             ->groupBy('id_dossier')
@@ -41,7 +40,7 @@ class OperationController extends Controller
             $dossiers[] = $operation->id_dossier;
         }
 
-        $contrats = CFDossier::join('cf_contrat_pret_groupes','cf_dossiers.id_dossier','cf_contrat_pret_groupes.dossier_id')
+        $contrats = Cycle::join('cf_contrat_pret_groupes','cf_dossiers.id_dossier','cf_contrat_pret_groupes.dossier_id')
                         ->join('cd_operations','cf_contrat_pret_groupes.pret_id','=','cd_operations.pret_id')
                         ->whereIn('id_dossier', $dossiers)
                         ->select('id_dossier', DB::raw("MIN(date_oper) date_oper, SUM(debit) debit, SUM(credit) credit"))
@@ -89,7 +88,7 @@ class OperationController extends Controller
     public function create(Request $request, $id_dossier)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return abort(404);
@@ -180,7 +179,7 @@ class OperationController extends Controller
 
         }
 
-        OperationGroupe::insert($operations);
+        MeetingOperation::insert($operations);
 
         session()->forget("cf_versement");
 
@@ -204,7 +203,7 @@ class OperationController extends Controller
 
         //`mtt_remb`, `mtt_depot`, `mtt_retrait`, `penalite`
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return abort(404);
@@ -212,7 +211,7 @@ class OperationController extends Controller
 
         $tri = $request->tri == 'desc' ? 'desc' : 'asc';
 
-        $operations = CFOperation::where('dossier_id', $id_dossier)
+        $operations = MeetingOperation::where('dossier_id', $id_dossier)
                             ->select('dossier_id','ref_operation','date_oper', DB::raw("SUM(mtt_remb) mtt_remb,
                                     SUM(mtt_depot) mtt_depot,
                                     SUM(mtt_retrait) mtt_retrait,
@@ -231,7 +230,7 @@ class OperationController extends Controller
     public function showDetail($id_dossier, $ref_operation)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return abort(404);
@@ -239,14 +238,14 @@ class OperationController extends Controller
 
 
 
-        $operations = CFOperation::join('tiers', 'cf_operations.tiers_id','tiers.id_tiers')
+        $operations = MeetingOperation::join('tiers', 'cf_operations.tiers_id','tiers.id_tiers')
                             ->join('cf_membres','tiers.id_tiers','cf_membres.tiers_id')
                             ->where('ref_operation', $ref_operation)
                             ->orderBy('profil')
                             ->orderBy('nom_tiers')
                             ->get();
 
-        $sum_operation = CFOperation::where('ref_operation', $ref_operation)
+        $sum_operation = MeetingOperation::where('ref_operation', $ref_operation)
                             ->where('dossier_id', $id_dossier)
                             ->select('dossier_id','ref_operation','date_oper', DB::raw("SUM(mtt_remb) mtt_remb,
                                     SUM(mtt_depot) mtt_depot,
@@ -260,7 +259,7 @@ class OperationController extends Controller
 
         //`mtt_remb`, `mtt_depot`, `mtt_retrait`, `penalite`
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return abort(404);
@@ -285,7 +284,7 @@ class OperationController extends Controller
     public function edit($id_dossier, $ref_operation)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return abort(404);
@@ -293,14 +292,14 @@ class OperationController extends Controller
 
 
 
-        $operations = CFOperation::join('tiers', 'cf_operations.tiers_id','tiers.id_tiers')
+        $operations = MeetingOperation::join('tiers', 'cf_operations.tiers_id','tiers.id_tiers')
                             ->join('cf_membres','tiers.id_tiers','cf_membres.tiers_id')
                             ->where('ref_operation', $ref_operation)
                             ->orderBy('profil')
                             ->orderBy('nom_tiers')
                             ->get();
 
-        $sum_operation = CFOperation::where('ref_operation', $ref_operation)
+        $sum_operation = MeetingOperation::where('ref_operation', $ref_operation)
                             ->where('dossier_id', $id_dossier)
                             ->select('dossier_id','ref_operation','date_oper', DB::raw("SUM(mtt_remb) mtt_remb,
                                     SUM(mtt_depot) mtt_depot,
@@ -314,7 +313,7 @@ class OperationController extends Controller
 
         //`mtt_remb`, `mtt_depot`, `mtt_retrait`, `penalite`
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return abort(404);
@@ -347,7 +346,7 @@ class OperationController extends Controller
             'dateOper.date' =>"Le format de date n'est pas valide"
         ]);
 
-        CFOperation::where('dossier_id', $request->dossierId)
+        MeetingOperation::where('dossier_id', $request->dossierId)
             ->where('ref_operation', $request->refOperation)
             ->update(['date_oper'  =>$request->dateOper]);
 
@@ -395,7 +394,7 @@ class OperationController extends Controller
 
         $membre = (new TiersRepository)->find($id_tiers);
 
-        $contrat = ContratPret::where('ref_pret', $ref_pret)->first();
+        $contrat = ContractLoan::where('ref_pret', $ref_pret)->first();
 
 
         return response()->json(['data'=>[

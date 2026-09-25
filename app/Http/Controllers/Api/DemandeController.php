@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CFDossier;
-use App\Models\DemandePret;
-use App\Models\DemandePretGroupe;
-use App\Models\GroupeSolide;
-use App\Models\Tiers;
+use App\Models\Association\Cycle;
+use App\Models\Lending\ApplicationLoan;
+use App\Models\Association\GroupLoanApplication;
+use App\Models\Association\Group;
+use App\Models\Customer\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -19,7 +19,7 @@ class DemandeController extends ApiController
     /** File des demandes de l'animatrice (statuts O / P). */
     public function index()
     {
-        $demandes = DemandePretGroupe::join('cf_dossiers', 'cf_demande_pret_groupes.dossier_id', 'cf_dossiers.id_dossier')
+        $demandes = GroupLoanApplication::join('cf_dossiers', 'cf_demande_pret_groupes.dossier_id', 'cf_dossiers.id_dossier')
             ->join('cd_demandes', 'cf_demande_pret_groupes.ref_dde', 'cd_demandes.id_demande')
             ->join('cf_groupe_solidarites', 'cf_dossiers.groupe_id', 'cf_groupe_solidarites.id_groupe')
             ->join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
@@ -37,13 +37,13 @@ class DemandeController extends ApiController
     }
 
     /** Membres du groupe encore éligibles (non déjà présents dans `lignes`). Body/query: exclure[]. */
-    public function membresEligibles(Request $request, GroupeSolide $groupe)
+    public function membresEligibles(Request $request, Group $groupe)
     {
         $this->authorize('access', $groupe);
 
         $exclure = (array) $request->input('exclure', []);
 
-        $tiers = Tiers::join('cf_membres', 'tiers.id_tiers', '=', 'cf_membres.tiers_id')
+        $tiers = Customer::join('cf_membres', 'tiers.id_tiers', '=', 'cf_membres.tiers_id')
             ->where('groupe_id', $groupe->id_groupe)
             ->where('status', 'A')
             ->whereNotIn('id_tiers', $exclure)
@@ -63,7 +63,7 @@ class DemandeController extends ApiController
      * Crée un lot de demandes pour un groupe (remplace panier + store).
      * Body: { lignes: [ { folio, montant, objet } ] }
      */
-    public function store(Request $request, GroupeSolide $groupe)
+    public function store(Request $request, Group $groupe)
     {
         $this->authorize('access', $groupe);
 
@@ -90,11 +90,11 @@ class DemandeController extends ApiController
     }
 
     /** Demandes d'un dossier. */
-    public function showByDossier(CFDossier $dossier)
+    public function showByDossier(Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
-        $demandes = DemandePretGroupe::join('cd_demandes', 'cf_demande_pret_groupes.ref_dde', 'cd_demandes.id_demande')
+        $demandes = GroupLoanApplication::join('cd_demandes', 'cf_demande_pret_groupes.ref_dde', 'cd_demandes.id_demande')
             ->join('tiers', 'cd_demandes.tiers_id', '=', 'tiers.id_tiers')
             ->where('dossier_id', $dossier->id_dossier)
             ->get();
@@ -115,11 +115,11 @@ class DemandeController extends ApiController
             'objet'   => ['required', 'string'],
         ]);
 
-        $ligneGroupe = DemandePretGroupe::where('ref_dde', $demande)->firstOrFail();
-        $dossier = CFDossier::findOrFail($ligneGroupe->dossier_id);
+        $ligneGroupe = GroupLoanApplication::where('ref_dde', $demande)->firstOrFail();
+        $dossier = Cycle::findOrFail($ligneGroupe->dossier_id);
         $this->authorize('access', $dossier);
 
-        DemandePret::where('id_demande', $demande)->update([
+        ApplicationLoan::where('id_demande', $demande)->update([
             'mtt_capital'    => $data['montant'],
             'mtt_recommande' => $data['montant'],
             'objet_pret'     => $data['objet'],

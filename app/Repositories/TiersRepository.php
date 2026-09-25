@@ -2,14 +2,14 @@
 
 namespace App\Repositories;
 
-use App\Models\Tiers;
+use App\Models\Customer\Customer;
 
 class TiersRepository
 {
 
     public function find($id_tiers)
     {
-        return Tiers::where('id_tiers', $id_tiers)
+        return Customer::where('id_tiers', $id_tiers)
                 ->join('caisses','tiers.caisse_id','=','caisses.id_caisse')
                 ->first();
     }
@@ -21,13 +21,13 @@ class TiersRepository
 
         if($agence){
 
-            $tiers = Tiers::where('id_tiers','=', $id_tiers)
+            $tiers = Customer::where('id_tiers','=', $id_tiers)
                         ->where('caisse_id','like', $agence.'%')
                         ->first();
 
         }else{
 
-            $tiers = Tiers::where('id_tiers','=', $id_tiers)
+            $tiers = Customer::where('id_tiers','=', $id_tiers)
                         ->first();
         }
 
@@ -38,7 +38,7 @@ class TiersRepository
     public function paginate($per_page)
     {
 
-        return Tiers::where(function($query){
+        return Customer::where(function($query){
 
            $search = session()->has('tiers') ? json_decode(session('tiers')) : (object)[];
 
@@ -76,7 +76,7 @@ class TiersRepository
 
         $status = empty($status) ? ['A','D'] : [$status];
 
-        return Tiers::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
+        return Customer::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
                     ->where('groupe_id', session('id_groupe'))
                     ->whereIn('status', $status)
                     ->where(function($query){

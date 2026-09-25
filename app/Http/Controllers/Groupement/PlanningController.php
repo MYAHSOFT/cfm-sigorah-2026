@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Groupement;
 
 use App\Http\Controllers\Controller;
-use App\Models\CalendrierCycle;
+use App\Models\Association\CycleCalendar;
 use Illuminate\Http\Request;
 
 class PlanningController extends Controller
@@ -69,7 +69,7 @@ class PlanningController extends Controller
 
         $agent = $employe->id_employe;
 
-        $calendriers = CalendrierCycle::join('cf_dossiers', 'cf_calendier_cycles.dossier_id','cf_dossiers.id_dossier')
+        $calendriers = CycleCalendar::join('cf_dossiers', 'cf_calendier_cycles.dossier_id','cf_dossiers.id_dossier')
                                 ->join('cf_groupe_solidarites', 'cf_dossiers.groupe_id', 'cf_groupe_solidarites.id_groupe')
                                 ->join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
                                 ->where('animatrice', $agent)
@@ -79,14 +79,14 @@ class PlanningController extends Controller
                                 ->groupBy('id_tiers','nom_tiers','id_groupe','num_caisse','jour_reunion', 'id_dossier')
                                 ->get();
 
-        $calendrier_cycles = CalendrierCycle::join('cf_dossiers', 'cf_calendier_cycles.dossier_id','cf_dossiers.id_dossier')
+        $calendrier_cycles = CycleCalendar::join('cf_dossiers', 'cf_calendier_cycles.dossier_id','cf_dossiers.id_dossier')
                                 ->where('animatrice', $agent)
                                 ->whereYear('date_oper', $year)
                                 ->whereMonth('date_oper', $month)
                                 ->select('cf_calendier_cycles.*')
                                 ->get();
 
-        $dossiers = CalendrierCycle::join('cf_dossiers', 'cf_calendier_cycles.dossier_id','cf_dossiers.id_dossier')
+        $dossiers = CycleCalendar::join('cf_dossiers', 'cf_calendier_cycles.dossier_id','cf_dossiers.id_dossier')
                                 ->where('animatrice', $agent)
                                 ->whereYear('date_oper', $year)
                                 ->whereMonth('date_oper', $month)

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Groupement;
 
-use App\Models\CDOperation;
+use App\Models\Lending\TransactionLoan;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
@@ -18,7 +18,7 @@ class CalendrierController extends Controller
 
         $user = \Auth::user();
 
-        $encours = CDOperation::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', 'cf_contrat_pret_groupes.pret_id')
+        $encours = TransactionLoan::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', 'cf_contrat_pret_groupes.pret_id')
                             ->join('cf_groupe_solidarites', 'cf_contrat_pret_groupes.groupe_id','cf_groupe_solidarites.id_groupe')
                             ->join('cf_dossiers','cf_contrat_pret_groupes.dossier_id','cf_dossiers.id_dossier')
                             ->join('tiers','cf_groupe_solidarites.id_groupe','tiers.id_tiers')

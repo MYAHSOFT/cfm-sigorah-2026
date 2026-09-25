@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Groupement;
 
-use App\Models\CFDossier;
+use App\Models\Association\Cycle;
 use Illuminate\Http\Request;
-use App\Models\ContratPretGroupe;
+use App\Models\Association\GroupLoanContract;
 use App\Models\EmployeResponsable;
 use App\Http\Controllers\Controller;
 use App\Repositories\OperationGroupeRepository;
@@ -30,7 +30,7 @@ class PretEchusController extends Controller
 
 
 
-        $pret_echus_all = CFDossier::join('cf_date_fin_cycle','cf_dossiers.id_dossier','cf_date_fin_cycle.dossier_id')
+        $pret_echus_all = Cycle::join('cf_date_fin_cycle','cf_dossiers.id_dossier','cf_date_fin_cycle.dossier_id')
                             ->where('statut', 'C')
                             ->where(function($query){
 
@@ -51,7 +51,7 @@ class PretEchusController extends Controller
                 $dossiers[]=$pret->id_dossier;
             }
 
-            $contrat_groupes = ContratPretGroupe::join('cd_operations','cf_contrat_pret_groupes.pret_id','=','cd_operations.pret_id')
+            $contrat_groupes = GroupLoanContract::join('cd_operations','cf_contrat_pret_groupes.pret_id','=','cd_operations.pret_id')
                             ->select('dossier_id','groupe_id', DB::raw("MIN(date_oper) AS date_octroi, SUM(debit) AS debit"))
                             ->groupBy('dossier_id','groupe_id')
                             ->whereIn('dossier_id', $dossiers)->get();

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Compte;
-use App\Models\CFFonctionGroupe;
-use App\Models\Employe;
-use App\Models\GroupeSolide;
+use App\Models\Saving\AccountSaving;
+use App\Models\Association\MemberRole;
+use App\Models\Bank\Employe;
+use App\Models\Association\Group;
 use Illuminate\Http\Request;
 
 /**
@@ -18,7 +18,7 @@ class GroupementController extends ApiController
     /** Liste des groupements occupés par l'animatrice connectée. */
     public function index(Request $request)
     {
-        $groupes = GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe', '=', 'tiers.id_tiers')
+        $groupes = Group::join('tiers', 'cf_groupe_solidarites.id_groupe', '=', 'tiers.id_tiers')
             ->where('agent_id', $this->agentCode())
             ->when($request->filled('q'), function ($query) use ($request) {
                 $query->where('num_caisse', $request->input('q'));
@@ -30,11 +30,11 @@ class GroupementController extends ApiController
     }
 
     /** Détail d'un groupement + compte de base + animatrice. */
-    public function show(GroupeSolide $groupe)
+    public function show(Group $groupe)
     {
         $this->authorize('access', $groupe);
 
-        $compte = Compte::where('tiers_id', $groupe->tiers_id)
+        $compte = AccountSaving::where('tiers_id', $groupe->tiers_id)
             ->where('produit_id', config('sigorah.produit_base'))
             ->first();
 
@@ -42,7 +42,7 @@ class GroupementController extends ApiController
             'groupe'   => $groupe,
             'compte'   => $compte,
             'employe'  => Employe::where('id_employe', $groupe->animatrice_id)->first(),
-            'fonctions' => CFFonctionGroupe::get(),
+            'fonctions' => MemberRole::get(),
         ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Bank\Employe;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -40,7 +41,12 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
+        'password_expires_at' => 'datetime',
+        'password_must_change' => 'boolean',
+        'two_factor_confirmed' => 'boolean',
+        'two_factor_deadline' => 'date',
+        'otp_expires_at' => 'datetime',
+        'blocked_at' => 'datetime',
     ];
 
     public function employe()

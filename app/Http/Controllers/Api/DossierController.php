@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CFDemandePret;
-use App\Models\CFDossier;
-use App\Models\DemandePret;
-use App\Models\DemandePretGroupe;
-use App\Models\GroupeSolide;
+use App\Models\Association\MemberApplication;
+use App\Models\Association\Cycle;
+use App\Models\Lending\ApplicationLoan;
+use App\Models\Association\GroupLoanApplication;
+use App\Models\Association\Group;
 use App\Repositories\CFDossierRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,13 +18,13 @@ use Illuminate\Support\Facades\DB;
 class DossierController extends ApiController
 {
     /** Dossiers d'un groupement (option ?annee=YYYY|all). */
-    public function index(Request $request, GroupeSolide $groupe)
+    public function index(Request $request, Group $groupe)
     {
         $this->authorize('access', $groupe);
 
         $annee = $request->input('annee', date('Y'));
 
-        $dossiers = CFDossier::join('cf_demande_pret_groupes', 'cf_dossiers.id_dossier', 'cf_demande_pret_groupes.dossier_id')
+        $dossiers = Cycle::join('cf_demande_pret_groupes', 'cf_dossiers.id_dossier', 'cf_demande_pret_groupes.dossier_id')
             ->join('cd_demandes', 'cf_demande_pret_groupes.ref_dde', 'cd_demandes.id_demande')
             ->where('cf_dossiers.groupe_id', $groupe->id_groupe)
             ->when($annee !== 'all', fn ($q) => $q->whereYear('debut_cycle', $annee))
@@ -38,7 +38,7 @@ class DossierController extends ApiController
     }
 
     /** Détail d'un dossier. */
-    public function show(CFDossierRepository $repo, CFDossier $dossier)
+    public function show(CFDossierRepository $repo, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
@@ -49,7 +49,7 @@ class DossierController extends ApiController
      * Crée un cycle + ses demandes-cycle (miroir de DossierController::store).
      * Body: { date_debut, date_fin, date_octroi, mode, jour, objet?, lignes:[{folio,montant,objet}] }
      */
-    public function store(Request $request, GroupeSolide $groupe)
+    public function store(Request $request, Group $groupe)
     {
         $this->authorize('access', $groupe);
 
@@ -87,7 +87,7 @@ class DossierController extends ApiController
         ];
 
         DB::transaction(function () use ($dossier, $data) {
-            CFDossier::create($dossier);
+            Cycle::create($dossier);
 
             $rows = [];
             foreach ($data['lignes'] as $ligne) {
@@ -99,17 +99,17 @@ class DossierController extends ApiController
                     'objet_pret'  => $ligne['objet'],
                 ];
             }
-            CFDemandePret::insert($rows);
+            MemberApplication::insert($rows);
         });
 
-        return $this->data(CFDossier::find($idDossier), 201);
+        return $this->data(Cycle::find($idDossier), 201);
     }
 
     /**
      * Variante « demandes définitives » (miroir de DossierController::storeDemande) :
      * crée le dossier + cd_demandes + cf_demande_pret_groupes.
      */
-    public function storeDefinitif(Request $request, GroupeSolide $groupe)
+    public function storeDefinitif(Request $request, Group $groupe)
     {
         $this->authorize('access', $groupe);
 
@@ -147,12 +147,12 @@ class DossierController extends ApiController
         ];
 
         DB::transaction(function () use ($dossier, $data, $caisseId, $groupe) {
-            CFDossier::create($dossier);
+            Cycle::create($dossier);
 
             foreach ($data['lignes'] as $ligne) {
                 $idDemande = \App\Lib\Referentiel::demandeId($caisseId, $dossier['debut_cycle']);
 
-                DemandePret::create([
+                ApplicationLoan::create([
                     'id_demande'     => $idDemande,
                     'ref_demande'    => $idDemande,
                     'tiers_id'       => $ligne['folio'],
@@ -166,7 +166,7 @@ class DossierController extends ApiController
                     'duree_mois'     => config('groupement.duree_pret'),
                 ]);
 
-                DemandePretGroupe::create([
+                GroupLoanApplication::create([
                     'ref_dde'    => $idDemande,
                     'groupe_id'  => $groupe->id_groupe,
                     'dossier_id' => $dossier['id_dossier'],
@@ -174,11 +174,11 @@ class DossierController extends ApiController
             }
         });
 
-        return $this->data(CFDossier::find($idDossier), 201);
+        return $this->data(Cycle::find($idDossier), 201);
     }
 
     /** Mise à jour des paramètres d'un cycle. */
-    public function update(Request $request, CFDossier $dossier)
+    public function update(Request $request, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 

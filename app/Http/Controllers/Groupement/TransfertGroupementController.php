@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Groupement;
 
 use App\Http\Controllers\Controller;
-use App\Models\Employe;
-use App\Models\GroupeSolide;
+use App\Models\Bank\Employe;
+use App\Models\Association\Group;
 use App\Repositories\GroupeSolideMembreRepository;
 use App\Repositories\GroupeSolideRepository;
 use Illuminate\Http\Request;
@@ -68,7 +68,7 @@ class TransfertGroupementController extends Controller
 
             $president = $_membre_groupe->getMembreBureauByFonction($groupe->id_groupe, 'PRD');
 
-            $count_groupes = GroupeSolide::join('employe_responsables','cf_groupe_solidarites.animatrice_id','employe_responsables.id_employe')
+            $count_groupes = Group::join('employe_responsables','cf_groupe_solidarites.animatrice_id','employe_responsables.id_employe')
                                 ->where('id_responsable', $user->name)
                                 ->select('id_employe', DB::raw("COUNT(id_groupe) AS nb_groupe"))
                                 ->groupBy('id_employe')
@@ -105,7 +105,7 @@ class TransfertGroupementController extends Controller
     public function store(Request $request)
     {
 
-        GroupeSolide::where('id_groupe', $request->groupeId)
+        Group::where('id_groupe', $request->groupeId)
                 ->update([
                     'animatrice_id' =>$request->employeId
                 ]);

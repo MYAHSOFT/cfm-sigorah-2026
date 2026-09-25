@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\GroupeSolide;
+use App\Models\Association\Group;
 use App\Models\User;
 
 /**
@@ -16,7 +16,7 @@ class GroupeSolidePolicy
     /**
      * Consulter / opérer sur un groupement précis.
      */
-    public function access(User $user, GroupeSolide $groupe): bool
+    public function access(User $user, Group $groupe): bool
     {
         return (string) $groupe->agent_id === (string) $user->name;
     }

@@ -1,7 +1,7 @@
 <?php
 namespace App\Repositories;
 
-use App\Models\GroupeSolideMembre;
+use App\Models\Association\Member;
 
 class GroupeSolideMembreRepository
 {
@@ -9,7 +9,7 @@ class GroupeSolideMembreRepository
     public function paginate($id_groupe, $per_page)
     {
 
-        return GroupeSolideMembre::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
+        return Member::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
                     ->join('tiers', 'cf_membres.tiers_id','=','tiers.id_tiers')
                     ->join('cf_fonction_membre_groupement', 'cf_membres.fonction_id','=','cf_fonction_membre_groupement.id_fonction')
                     ->where('id_groupe', $id_groupe)
@@ -22,7 +22,7 @@ class GroupeSolideMembreRepository
     public function getMembre($id_groupe)
     {
 
-        return GroupeSolideMembre::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
+        return Member::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
                     ->join('tiers', 'cf_membres.tiers_id','=','tiers.id_tiers')
                     ->where('id_groupe', $id_groupe)
                     ->get();
@@ -32,7 +32,7 @@ class GroupeSolideMembreRepository
     public function getMembreNotInList($id_groupe)
     {
 
-        return GroupeSolideMembre::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
+        return Member::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
                     ->join('tiers', 'cf_membres.tiers_id','=','tiers.id_tiers')
                     ->where('id_groupe', $id_groupe)
                     ->where(function($query){
@@ -58,7 +58,7 @@ class GroupeSolideMembreRepository
     public function getMembreBureauByFonction($id_groupe, $id_fonction)
     {
 
-        return GroupeSolideMembre::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
+        return Member::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
                     ->join('tiers', 'cf_membres.tiers_id','=','tiers.id_tiers')
                     ->where('id_groupe', $id_groupe)
                     ->where('fonction_id', $id_fonction)
@@ -69,7 +69,7 @@ class GroupeSolideMembreRepository
     public function getBureau($id_groupe)
     {
 
-        return GroupeSolideMembre::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
+        return Member::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
                     ->join('tiers', 'cf_membres.tiers_id','=','tiers.id_tiers')
                     ->where('id_groupe', $id_groupe)
                     ->where('fonction_id','<>', 'MBR')
@@ -80,7 +80,7 @@ class GroupeSolideMembreRepository
     public function membreGroupeByStatus($id_groupe,$status, $per_page)
     {
 
-        return GroupeSolideMembre::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
+        return Member::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
                     ->join('tiers', 'cf_membres.tiers_id','=','tiers.id_tiers')
                     ->join('cf_fonction_membre_groupement', 'cf_membres.fonction_id','=','cf_fonction_membre_groupement.id_fonction')
                     ->where('id_groupe', $id_groupe)
@@ -94,7 +94,7 @@ class GroupeSolideMembreRepository
     public function membreByStatus($status, $per_page)
     {
 
-        return GroupeSolideMembre::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
+        return Member::join('cf_groupe_solidarites','cf_membres.groupe_id','=','cf_groupe_solidarites.id_groupe')
                     ->join('tiers', 'cf_membres.tiers_id','=','tiers.id_tiers')
                     ->join('cf_fonction_membre_groupement', 'cf_membres.fonction_id','=','cf_fonction_membre_groupement.id_fonction')
                     ->where('status', $status)

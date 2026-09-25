@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Groupement;
 
 use App\Http\Controllers\Controller;
-use App\Models\CFEncours;
-use App\Models\CycleActivite;
-use App\Models\Tiers;
+use App\Models\Lending\LoanReportOutstanding;
+use App\Models\Association\Cycle;
+use App\Models\Customer\Customer;
 use Illuminate\Http\Request;
 use DB;
 class EncoursGroupement extends Controller
@@ -33,7 +33,7 @@ class EncoursGroupement extends Controller
 
             $animatrices = [$employe->id_employe];
 
-            $encours = CFEncours::join('cf_contrat_pret_groupes','cf_encours_at4.ref_pret','=','cf_contrat_pret_groupes.pret_id')
+            $encours = LoanReportOutstanding::join('cf_contrat_pret_groupes','cf_encours_at4.ref_pret','=','cf_contrat_pret_groupes.pret_id')
                                 ->join('cf_groupe_solidarites','cf_contrat_pret_groupes.groupe_id','=','cf_groupe_solidarites.id_groupe')
                                 ->whereIn('animatrice_id', $animatrices)
                                 ->where('date_arret',$date_arret)
@@ -55,8 +55,8 @@ class EncoursGroupement extends Controller
                 $tbl_cycles[] = $enc->cycle_id;
             }
 
-            $tiers = Tiers::whereIn('id_tiers', $tbl_groupes)->get();
-            $cycles_activites = CycleActivite::whereIn('id_cycle', $tbl_cycles)->get();
+            $tiers = Customer::whereIn('id_tiers', $tbl_groupes)->get();
+            $cycles_activites = Cycle::whereIn('id_cycle', $tbl_cycles)->get();
 
             foreach ($tiers as $groupe) {
 

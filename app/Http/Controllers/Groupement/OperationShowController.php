@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Groupement;
 
 use Illuminate\Http\Request;
-use App\Models\CalendrierCycle;
+use App\Models\Association\CycleCalendar;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Repositories\TiersRepository;
@@ -28,7 +28,7 @@ class OperationShowController extends Controller
 
         $president = $_membre_groupe->getMembreBureauByFonction($groupe->id_groupe, 'PRD');
 
-        $echeance = CalendrierCycle::where('dossier_id', $id_dossier)->max('date_oper');
+        $echeance = CycleCalendar::where('dossier_id', $id_dossier)->max('date_oper');
 
         return view('groupement.operations.showGroupByDate', [
             'groupe'    =>$groupe,
@@ -53,7 +53,7 @@ class OperationShowController extends Controller
 
         $president = $_membre_groupe->getMembreBureauByFonction($groupe->id_groupe, 'PRD');
 
-        $echeance = CalendrierCycle::where('dossier_id', $id_dossier)->max('date_oper');
+        $echeance = CycleCalendar::where('dossier_id', $id_dossier)->max('date_oper');
 
         return view('groupement.operations.show', [
             'groupe'    =>$groupe,

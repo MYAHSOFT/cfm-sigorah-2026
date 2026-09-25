@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CFDossier;
-use App\Models\CFOperation;
-use App\Models\ContratPretGroupe;
-use App\Models\GroupeSolide;
+use App\Models\Association\Cycle;
+use App\Models\Association\MeetingOperation;
+use App\Models\Association\GroupLoanContract;
+use App\Models\Association\Group;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,13 +15,13 @@ use Illuminate\Support\Facades\DB;
 class FicheMembreController extends ApiController
 {
     /** Contrats d'un groupement, par année (miroir de l'index). */
-    public function index(Request $request, GroupeSolide $groupe)
+    public function index(Request $request, Group $groupe)
     {
         $this->authorize('access', $groupe);
 
         $annee = $request->input('annee', date('Y'));
 
-        $contrats = ContratPretGroupe::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
+        $contrats = GroupLoanContract::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
             ->join('cf_dossiers', 'cf_contrat_pret_groupes.dossier_id', 'cf_dossiers.id_dossier')
             ->where('cf_dossiers.groupe_id', $groupe->id_groupe)
             ->when($annee !== 'all', fn ($q) => $q->whereYear('echeance', $annee))
@@ -35,18 +35,18 @@ class FicheMembreController extends ApiController
     }
 
     /** Fiche d'un membre sur un dossier : opérations + totaux (?tri=az|za). */
-    public function show(Request $request, CFDossier $dossier, string $tiers)
+    public function show(Request $request, Cycle $dossier, string $tiers)
     {
         $this->authorize('access', $dossier);
 
         $tri = $request->input('tri') === 'za' ? 'desc' : 'asc';
 
-        $operations = CFOperation::where('tiers_id', $tiers)
+        $operations = MeetingOperation::where('tiers_id', $tiers)
             ->where('dossier_id', $dossier->id_dossier)
             ->orderBy('date_oper', $tri)
             ->get();
 
-        $sum = CFOperation::where('tiers_id', $tiers)
+        $sum = MeetingOperation::where('tiers_id', $tiers)
             ->where('dossier_id', $dossier->id_dossier)
             ->select('dossier_id', 'tiers_id', DB::raw('SUM(mtt_remb) mtt_remb, SUM(mtt_depot) mtt_depot, SUM(mtt_retrait) mtt_retrait, SUM(penalite) penalite'))
             ->groupBy('dossier_id', 'tiers_id')

@@ -2,7 +2,7 @@
 
 namespace App\View\Components;
 
-use App\Models\GroupeSolide;
+use App\Models\Association\Group;
 use Illuminate\View\Component;
 
 class HeaderGroupement extends Component
@@ -28,7 +28,7 @@ class HeaderGroupement extends Component
 
         if(session()->has('id_groupe')){
 
-            $groupe = GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
+            $groupe = Group::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
                                 ->where('id_groupe', session('id_groupe'))
                                 ->first();
         }

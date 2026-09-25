@@ -1,7 +1,7 @@
 <?php
 namespace App\Repositories;
 
-use App\Models\Employe;
+use App\Models\Bank\Employe;
 
 class EmployeRepository
 {

@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CalendrierCycle;
-use App\Models\Calendrier;
-use App\Models\CDOperation;
-use App\Models\CFDossier;
-use App\Models\CFEcheancier;
-use App\Models\Compte;
-use App\Models\ContratPret;
-use App\Models\ContratPretGroupe;
-use App\Models\DemandePretGroupe;
-use App\Models\Journal;
-use App\Models\ProduitCredit;
+use App\Models\Association\CycleCalendar;
+use App\Models\Lending\ScheduleLoan;
+use App\Models\Lending\TransactionLoan;
+use App\Models\Association\Cycle;
+use App\Models\Association\GroupSchedule;
+use App\Models\Saving\AccountSaving;
+use App\Models\Lending\ContractLoan;
+use App\Models\Association\GroupLoanContract;
+use App\Models\Association\GroupLoanApplication;
+use App\Models\Accounting\JournalAccounting;
+use App\Models\Lending\ProductLoan;
 use App\Repositories\DemandePretGroupeRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,12 +34,12 @@ class OctroiController extends ApiController
     /** Dossiers approuvés en attente d'octroi pour l'animatrice. */
     public function index()
     {
-        $nonOctroyes = CFDossier::leftJoin('cf_contrat_pret_groupes', 'cf_dossiers.id_dossier', 'cf_contrat_pret_groupes.dossier_id')
+        $nonOctroyes = Cycle::leftJoin('cf_contrat_pret_groupes', 'cf_dossiers.id_dossier', 'cf_contrat_pret_groupes.dossier_id')
             ->where('animatrice', $this->agentCode())
             ->whereNull('dossier_id')
             ->pluck('cf_dossiers.id_dossier');
 
-        $demandes = DemandePretGroupe::join('cd_demandes', 'cf_demande_pret_groupes.ref_dde', 'cd_demandes.id_demande')
+        $demandes = GroupLoanApplication::join('cd_demandes', 'cf_demande_pret_groupes.ref_dde', 'cd_demandes.id_demande')
             ->join('cf_dossiers', 'cf_demande_pret_groupes.dossier_id', 'cf_dossiers.id_dossier')
             ->join('cf_groupe_solidarites', 'cf_dossiers.groupe_id', 'cf_groupe_solidarites.id_groupe')
             ->where('animatrice', $this->agentCode())
@@ -52,7 +52,7 @@ class OctroiController extends ApiController
     }
 
     /** État d'octroi d'un dossier : demandes + montants recommandés. */
-    public function showByDossier(DemandePretGroupeRepository $repo, CFDossier $dossier)
+    public function showByDossier(DemandePretGroupeRepository $repo, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
@@ -69,7 +69,7 @@ class OctroiController extends ApiController
      * Simulation : renvoie le calendrier-cycle et l'échéancier par membre SANS rien écrire.
      * Body: { date_contrat }
      */
-    public function simulate(Request $request, DemandePretGroupeRepository $repo, CFDossier $dossier)
+    public function simulate(Request $request, DemandePretGroupeRepository $repo, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
@@ -86,7 +86,7 @@ class OctroiController extends ApiController
      * Exécute l'octroi.
      * Body: { date_contrat, produit_id, lignes:[{ref_dde, montant}] }
      */
-    public function store(Request $request, DemandePretGroupeRepository $repo, CFDossier $dossier)
+    public function store(Request $request, DemandePretGroupeRepository $repo, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
@@ -98,7 +98,7 @@ class OctroiController extends ApiController
             'lignes.*.montant'   => ['required', 'numeric', 'gt:0'],
         ]);
 
-        $produit = ProduitCredit::where('id_produit', $payload['produit_id'])->first();
+        $produit = ProductLoan::where('id_produit', $payload['produit_id'])->first();
         abort_if(! $produit, 422, 'Produit de crédit inconnu.');
 
         // ref_dde -> montant
@@ -109,7 +109,7 @@ class OctroiController extends ApiController
 
         // Contrôle d'appartenance des demandes au dossier + plafond montant recommandé.
         $refs = array_keys($cart);
-        $demandesDossier = DemandePretGroupe::join('cd_demandes', 'cf_demande_pret_groupes.ref_dde', 'cd_demandes.id_demande')
+        $demandesDossier = GroupLoanApplication::join('cd_demandes', 'cf_demande_pret_groupes.ref_dde', 'cd_demandes.id_demande')
             ->where('dossier_id', $dossier->id_dossier)
             ->whereIn('cd_demandes.id_demande', $refs)
             ->get()
@@ -123,7 +123,7 @@ class OctroiController extends ApiController
         }
 
         $result = DB::transaction(function () use ($dossier, $produit, $cart, $payload, $repo) {
-            $locked = CFDossier::where('id_dossier', $dossier->id_dossier)->lockForUpdate()->first();
+            $locked = Cycle::where('id_dossier', $dossier->id_dossier)->lockForUpdate()->first();
             if ($locked->statut_octroi === '1' || $locked->statut_octroi === 1) {
                 abort(409, 'Ce dossier a déjà été octroyé.');
             }
@@ -131,7 +131,7 @@ class OctroiController extends ApiController
             $dossier->date_octroi_effectif = $payload['date_contrat'];
             $locked->update(['date_octroi_effectif' => $payload['date_contrat']]);
 
-            if (CalendrierCycle::where('dossier_id', $dossier->id_dossier)->count() === 0) {
+            if (CycleCalendar::where('dossier_id', $dossier->id_dossier)->count() === 0) {
                 $calendriers = (object) \App\Lib\CalendrierGroupement::getGroupe($dossier, $repo, 'A');
                 $cals = [];
                 foreach ($calendriers as $c) {
@@ -140,11 +140,11 @@ class OctroiController extends ApiController
                 DB::table('cf_calendier_cycles')->insert($cals);
             }
 
-            $firstRemb = CalendrierCycle::where('dossier_id', $dossier->id_dossier)->min('date_oper');
-            $echeance  = CalendrierCycle::where('dossier_id', $dossier->id_dossier)->max('date_oper');
+            $firstRemb = CycleCalendar::where('dossier_id', $dossier->id_dossier)->min('date_oper');
+            $echeance  = CycleCalendar::where('dossier_id', $dossier->id_dossier)->max('date_oper');
             $echeanciersMembres = \App\Lib\CalendrierGroupement::echeancierParMembre($dossier, $repo, 'A');
 
-            $compte = Compte::where('tiers_id', $dossier->id_tiers)
+            $compte = AccountSaving::where('tiers_id', $dossier->id_tiers)
                 ->where('produit_id', config('groupement.produit_base'))
                 ->first();
 
@@ -182,7 +182,7 @@ class OctroiController extends ApiController
                 }
 
                 $idJournal = strtoupper(Str::ulid());
-                Journal::create([
+                JournalAccounting::create([
                     'id_journal'   => $idJournal,
                     'exo_id'       => config('groupement.exo'),
                     'caisse_id'    => config('groupement.caisseId'),
@@ -194,27 +194,27 @@ class OctroiController extends ApiController
                     'libelle'      => 'JOURNAL DCF ' . $dossier->animatrice,
                 ]);
 
-                ContratPret::create($contrat);
-                ContratPretGroupe::create([
+                ContractLoan::create($contrat);
+                GroupLoanContract::create([
                     'pret_id'    => $contrat['id_pret'],
                     'groupe_id'  => $demande->groupe_id,
                     'dossier_id' => $dossier->id_dossier,
                 ]);
-                CDOperation::create([
+                TransactionLoan::create([
                     'pret_id'    => $contrat['id_pret'],
                     'journal_id' => $idJournal,
                     'num_piece'  => $numPiece,
                     'date_oper'  => $contrat['date_contrat'],
                     'debit'      => $contrat['mtt_capital'],
                 ]);
-                Calendrier::create([
+                ScheduleLoan::create([
                     'pret_id'   => $contrat['id_pret'],
                     'date_oper' => $echeance,
                     'capital'   => $contrat['mtt_capital'],
                     'interet'   => $contrat['mtt_capital'] * $produit->taux_interet,
                 ]);
                 if ($echeanciers) {
-                    CFEcheancier::insert($echeanciers);
+                    GroupSchedule::insert($echeanciers);
                 }
 
                 $contrats[] = $contrat;

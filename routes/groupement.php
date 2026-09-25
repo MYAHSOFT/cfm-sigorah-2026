@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\GroupeSolide;
+use App\Models\Association\Group;
 use App\Http\Controllers\Groupement\MembreController;
 use App\Http\Controllers\Groupement\DossierController;
 use App\Http\Controllers\Groupement\EncoursController;
@@ -22,7 +22,7 @@ use App\Http\Controllers\Groupement\DecisionDemandeCreditController;
 use App\Http\Controllers\Groupement\DemandeTmpController;
 use App\Http\Controllers\Groupement\MembreBureauController;
 use App\Http\Controllers\Groupement\EcheancierMembreController;
-use App\Models\CFDossier;
+use App\Models\Association\Cycle;
 
 Route::middleware(['animatrice'])->group(function () {
 
@@ -242,9 +242,9 @@ Route::middleware(['animatrice'])->group(function () {
     Route::get('demande/groupe/{id_dossier}', function ($id_dossier) {
 
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
-        // $groupe = GroupeSolide::where('id_groupe', $dossier->groupe_id)->first();
+        // $groupe = Group::where('id_groupe', $dossier->groupe_id)->first();
 
 
         if (empty($dossier->groupe_id)) {

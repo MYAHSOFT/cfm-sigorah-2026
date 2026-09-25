@@ -2,13 +2,13 @@
 namespace App\Lib;
 
 use DB;
-use App\Models\Agence;
-use App\Models\Caisse;
-use App\Models\Employe;
+use App\Models\Bank\Agency;
+use App\Models\Bank\Teller;
+use App\Models\Bank\Employe;
 use App\Models\Fonction;
-use App\Models\Profession;
+use App\Models\Customer\OccupationCustomer;
 use App\Models\NatureJournal;
-use App\Models\ProduitCredit;
+use App\Models\Lending\ProductLoan;
 use App\Models\CodeAnalytique;
 use App\Models\FormeJuridique;
 
@@ -34,7 +34,7 @@ class Combobox
     public static function profession ($listFonction = null)
     {
 
-        $professions = Profession::where(function($query) use($listFonction){
+        $professions = OccupationCustomer::where(function($query) use($listFonction){
                                 if(is_array($listFonction)){
                                     if(count($listFonction) > 0){
                                         $query->whereIn('id_profession', $listFonction);
@@ -77,7 +77,7 @@ class Combobox
     public static function caisse ()
     {
 
-        $professions = Caisse::where('agence_id', session('agence'))
+        $professions = Teller::where('agence_id', session('agence'))
                             ->pluck('id_caisse','id_caisse');
 
         $data = [];
@@ -94,7 +94,7 @@ class Combobox
     public static function agence ()
     {
 
-        $professions = Agence::pluck('nom_agence','id_agence');
+        $professions = Agency::pluck('nom_agence','id_agence');
 
         $data = [];
 
@@ -130,7 +130,7 @@ class Combobox
     public static function produitCredit ()
     {
 
-        $produits = ProduitCredit::orderBy('classement_id')->get();
+        $produits = ProductLoan::orderBy('classement_id')->get();
 
         $data = [];
 

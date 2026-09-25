@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CFDossier;
-use App\Models\DemandePret;
+use App\Models\Association\Cycle;
+use App\Models\Lending\ApplicationLoan;
 use App\Repositories\DemandePretGroupeRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  */
 class DecisionController extends ApiController
 {
-    public function store(Request $request, DemandePretGroupeRepository $repo, CFDossier $dossier)
+    public function store(Request $request, DemandePretGroupeRepository $repo, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
@@ -40,7 +40,7 @@ class DecisionController extends ApiController
             DB::table('cf_calendier_cycles')->insert($cals);
 
             foreach ($demandes as $demande) {
-                DemandePret::where('ref_dde', $demande->ref_dde)->update(['decision' => 'A']);
+                ApplicationLoan::where('ref_dde', $demande->ref_dde)->update(['decision' => 'A']);
             }
         });
 

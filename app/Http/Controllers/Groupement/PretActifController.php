@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Groupement;
 use Illuminate\Http\Request;
 use App\Models\EmployeResponsable;
 use App\Http\Controllers\Controller;
-use App\Models\CDOperation;
-use App\Models\CFDossier;
-use App\Models\ContratPretGroupe;
+use App\Models\Lending\TransactionLoan;
+use App\Models\Association\Cycle;
+use App\Models\Association\GroupLoanContract;
 use App\Repositories\OperationGroupeRepository;
 use DB;
 
@@ -36,7 +36,7 @@ class PretActifController extends Controller
 
         $employe = \Auth::user()->employe;
 
-        $pret_actifs_all = CFDossier::where('statut', 'O')
+        $pret_actifs_all = Cycle::where('statut', 'O')
                             ->where('animatrice', $employe->id_employe)
                             ->get();
 
@@ -50,7 +50,7 @@ class PretActifController extends Controller
                 $dossiers[]=$pret->id_dossier;
             }
 
-            $contrat_groupes = ContratPretGroupe::join('cd_operations','cf_contrat_pret_groupes.pret_id','=','cd_operations.pret_id')
+            $contrat_groupes = GroupLoanContract::join('cd_operations','cf_contrat_pret_groupes.pret_id','=','cd_operations.pret_id')
                             ->select('dossier_id','groupe_id', DB::raw("MIN(date_oper) AS date_octroi, SUM(debit) AS debit"))
                             ->groupBy('dossier_id','groupe_id')
                             ->whereIn('dossier_id', $dossiers)->get();

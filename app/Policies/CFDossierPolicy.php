@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\CFDossier;
-use App\Models\GroupeSolide;
+use App\Models\Association\Cycle;
+use App\Models\Association\Group;
 use App\Models\User;
 
 /**
@@ -13,13 +13,13 @@ use App\Models\User;
  */
 class CFDossierPolicy
 {
-    public function access(User $user, CFDossier $dossier): bool
+    public function access(User $user, Cycle $dossier): bool
     {
         if ($dossier->animatrice === $user->name) {
             return true;
         }
 
-        return GroupeSolide::where('id_groupe', $dossier->groupe_id)
+        return Group::where('id_groupe', $dossier->groupe_id)
             ->where('agent_id', $user->name)
             ->exists();
     }

@@ -1,7 +1,7 @@
 <?php
 namespace App\Lib;
 
-use App\Models\Tiers;
+use App\Models\Customer\Customer;
 
 class Image
 {

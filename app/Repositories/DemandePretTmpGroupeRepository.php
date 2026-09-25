@@ -1,15 +1,15 @@
 <?php
 namespace App\Repositories;
 
-use App\Models\CFDemandePret;
-use App\Models\DemandePretGroupe;
+use App\Models\Association\MemberApplication;
+use App\Models\Association\GroupLoanApplication;
 use DB;
 class DemandePretTmpGroupeRepository
 {
 
     public function getMembres($id_dossier, $decision='E')
     {
-        return DemandePretGroupe::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
+        return GroupLoanApplication::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
                     ->join('tiers','cd_demandes.tiers_id','=','tiers.id_tiers')
                     ->where('dossier_id', $id_dossier)
                     ->where('decision','=',$decision)
@@ -18,27 +18,27 @@ class DemandePretTmpGroupeRepository
 
     public function get($id_dossier)
     {
-        return CFDemandePret::join('tiers','cf_demandes.tiers_id','=','tiers.id_tiers')
+        return MemberApplication::join('tiers','cf_demandes.tiers_id','=','tiers.id_tiers')
                     ->where('dossier_id', $id_dossier)
                     ->get();
     }
 
     public function count($id_dossier)
     {
-        return CFDemandePret::where('dossier_id', $id_dossier)
+        return MemberApplication::where('dossier_id', $id_dossier)
                     ->count();
     }
 
     public function sum($id_dossier)
     {
-        return CFDemandePret::where('dossier_id', $id_dossier)
+        return MemberApplication::where('dossier_id', $id_dossier)
                     ->sum('mtt_capital');
     }
 
     public function statutDemande($id_dossier)
     {
 
-        $statut =  DemandePretGroupe::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
+        $statut =  GroupLoanApplication::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
                     ->where('dossier_id', $id_dossier)
                     ->select('decision')
                     ->groupBy('decision')
@@ -50,7 +50,7 @@ class DemandePretTmpGroupeRepository
 
     public function find($ref_dde)
     {
-        return DemandePretGroupe::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
+        return GroupLoanApplication::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
                     ->join('tiers','cd_demandes.tiers_id','=','tiers.id_tiers')
                     ->where('cd_demandes.id_demande', $ref_dde)
                     ->first();
@@ -58,7 +58,7 @@ class DemandePretTmpGroupeRepository
 
     public function getGroupes($id_groupe)
     {
-        return DemandePretGroupe::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
+        return GroupLoanApplication::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
                     ->join('tiers','cd_demandes','cd_demandes.tiers_id','tiers.id_tiers')
                     ->where('groupe_id', $id_groupe)
                     ->get();
@@ -66,14 +66,14 @@ class DemandePretTmpGroupeRepository
 
     public function getGroupesByDossier($id_dossier)
     {
-        return DemandePretGroupe::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
+        return GroupLoanApplication::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
                     ->where('dossier_id', $id_dossier)
                     ->get();
     }
 
     public function paginateGroupes($decision,$per_page=10)
     {
-        return DemandePretGroupe::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
+        return GroupLoanApplication::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
                             ->join('cf_groupe_solidarites', 'cf_demande_pret_groupes.groupe_id','=','cf_groupe_solidarites.id_groupe')
                             ->join('cf_dossiers', 'cf_demande_pret_groupes.dossier_id','=','cf_dossiers.id_dossier')
                             ->join('tiers','cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
@@ -119,7 +119,7 @@ class DemandePretTmpGroupeRepository
 
     public function paginateNotOctroye($per_page=10)
     {
-        return DemandePretGroupe::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
+        return GroupLoanApplication::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
                             ->join('cf_groupe_solidarites', 'cf_demande_pret_groupes.groupe_id','=','cf_groupe_solidarites.id_groupe')
                             ->join('cf_dossiers', 'cf_demande_pret_groupes.dossier_id','=','cf_dossiers.id_dossier')
                             ->join('tiers','cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
@@ -134,7 +134,7 @@ class DemandePretTmpGroupeRepository
 
     public function getNotOctroye()
     {
-        return DemandePretGroupe::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
+        return GroupLoanApplication::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
                             ->join('cf_groupe_solidarites', 'cf_demande_pret_groupes.groupe_id','=','cf_groupe_solidarites.id_groupe')
                             ->join('cf_dossiers', 'cf_demande_pret_groupes.dossier_id','=','cf_dossiers.id_dossier')
                             ->join('tiers','cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
@@ -150,7 +150,7 @@ class DemandePretTmpGroupeRepository
     public function sumDemandeByCycle($id_dossier)
     {
 
-        return DemandePretGroupe::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
+        return GroupLoanApplication::join('cd_demandes','cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
                         ->join('cf_dossiers','cf_demande_pret_groupes.dossier_id','=','cf_dossiers.id_dossier')
                         ->where('id_dossier', $id_dossier)
                         ->select('id_dossier', 'cf_dossiers.groupe_id', 'debut_cycle', 'fin_cycle', 'mode_reunion', 'statut',

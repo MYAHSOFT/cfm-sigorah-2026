@@ -2,16 +2,16 @@
 namespace App\Repositories;
 
 use DB;
-use App\Models\CFDossier;
-use App\Models\CDOperation;
-use App\Models\OperationGroupe;
+use App\Models\Association\Cycle;
+use App\Models\Lending\TransactionLoan;
+use App\Models\Association\MeetingOperation;
 
 class OperationGroupeRepository
 {
 
     public function encaisseByGroupe($status,$per_page = 10)
     {
-        return OperationGroupe::rightJoin('cf_dossiers', 'cf_operations.dossier_id','cf_dossiers.id_dossier')
+        return MeetingOperation::rightJoin('cf_dossiers', 'cf_operations.dossier_id','cf_dossiers.id_dossier')
                         ->join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
                         ->join('tiers','cf_groupe_solidarites.id_groupe','tiers.id_tiers')
                         ->where(function($query){
@@ -58,14 +58,14 @@ class OperationGroupeRepository
 
     public function operationByMembre($id_dossier,$per_page=10)
     {
-        return OperationGroupe::join('tiers','cf_operations.tiers_id','tiers.id_tiers')
+        return MeetingOperation::join('tiers','cf_operations.tiers_id','tiers.id_tiers')
                         ->where('dossier_id', $id_dossier)
                         ->paginate($per_page);
     }
 
     public function operationByTiers($id_tiers, $id_dossier,$per_page=10)
     {
-        return OperationGroupe::join('tiers','cf_operations.tiers_id','tiers.id_tiers')
+        return MeetingOperation::join('tiers','cf_operations.tiers_id','tiers.id_tiers')
                         ->where('tiers_id', $id_tiers)
                         ->where('dossier_id', $id_dossier)
                         ->paginate($per_page);
@@ -73,14 +73,14 @@ class OperationGroupeRepository
 
     public function getOperationByTiers($id_tiers, $id_cycle,$per_page=10)
     {
-        return OperationGroupe::join('tiers','cf_operations.tiers_id','tiers.id_tiers')
+        return MeetingOperation::join('tiers','cf_operations.tiers_id','tiers.id_tiers')
                         ->where('cycle_id', $id_cycle)
                         ->paginate($per_page);
     }
 
     public function getGroupeByDate($id_dossier)
     {
-        return OperationGroupe::where('dossier_id', $id_dossier)
+        return MeetingOperation::where('dossier_id', $id_dossier)
                         ->select('date_oper',
                                 DB::raw("SUM(mtt_remb) AS mtt_remb,
                                 SUM(mtt_depot) AS mtt_depot,
@@ -92,7 +92,7 @@ class OperationGroupeRepository
 
     public function getMembreAllByDate($id_dossier, $date_oper)
     {
-        return OperationGroupe::join('tiers','cf_operations.tiers_id','tiers.id_tiers')
+        return MeetingOperation::join('tiers','cf_operations.tiers_id','tiers.id_tiers')
                         ->where('dossier_id', $id_dossier)
                         ->where('date_oper', $date_oper)
                         ->select('id_tiers','nom_tiers','prenom_tiers','cin','dossier_id','date_oper','photo','signature',
@@ -107,7 +107,7 @@ class OperationGroupeRepository
     public function perpageGoupByCycle($per_page)
     {
 
-        return OperationGroupe::join('cf_dossiers', 'cf_operations.dossier_id','cf_dossiers.id_dossier')
+        return MeetingOperation::join('cf_dossiers', 'cf_operations.dossier_id','cf_dossiers.id_dossier')
                         ->join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
                         ->join('tiers','cf_groupe_solidarites.id_groupe','tiers.id_tiers')
                         ->where(function($query){
@@ -136,7 +136,7 @@ class OperationGroupeRepository
 
         $user = \Auth::user();
 
-        $encours = CDOperation::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', 'cf_contrat_pret_groupes.pret_id')
+        $encours = TransactionLoan::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', 'cf_contrat_pret_groupes.pret_id')
                             ->join('cf_groupe_solidarites', 'cf_contrat_pret_groupes.groupe_id','cf_groupe_solidarites.id_groupe')
                             ->join('cf_dossiers','cf_contrat_pret_groupes.dossier_id','cf_dossiers.id_dossier')
                             ->join('tiers','cf_groupe_solidarites.id_groupe','tiers.id_tiers')
@@ -157,7 +157,7 @@ class OperationGroupeRepository
 
         $user = \Auth::user();
 
-        $encours = CDOperation::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', 'cf_contrat_pret_groupes.pret_id')
+        $encours = TransactionLoan::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', 'cf_contrat_pret_groupes.pret_id')
                             ->join('cf_groupe_solidarites', 'cf_contrat_pret_groupes.groupe_id','cf_groupe_solidarites.id_groupe')
                             ->join('cf_dossiers','cf_contrat_pret_groupes.dossier_id','cf_dossiers.id_dossier')
                             ->join('tiers','cf_groupe_solidarites.id_groupe','tiers.id_tiers')
@@ -176,7 +176,7 @@ class OperationGroupeRepository
     public function pretEchus($per_page = 10)
     {
 
-        return CFDossier::join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
+        return Cycle::join('cf_groupe_solidarites','cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
                                 ->join('cf_date_fin_cycle','cf_dossiers.id_dossier','cf_date_fin_cycle.dossier_id')
                                 ->join('tiers','cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
                                 ->where('statut', 'C')

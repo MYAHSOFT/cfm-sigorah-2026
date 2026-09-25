@@ -3,17 +3,16 @@
 namespace App\Http\Controllers\Groupement;
 
 use DB;
-use App\Models\Tiers;
-use App\Models\CFDossier;
-use App\Models\CFOperation;
-use App\Models\DemandePret;
-use App\Models\GroupeSolide;
+use App\Models\Customer\Customer;
+use App\Models\Association\Cycle;
+use App\Models\Association\MeetingOperation;
+use App\Models\Lending\ApplicationLoan;
+use App\Models\Association\Group;
 use Illuminate\Http\Request;
-use App\Models\CycleActivite;
 use App\Models\GPDemandePret;
-use App\Models\CalendrierCycle;
-use App\Models\DemandePretGroupe;
-use App\Models\GroupeSolideMembre;
+use App\Models\Association\CycleCalendar;
+use App\Models\Association\GroupLoanApplication;
+use App\Models\Association\Member;
 use App\Http\Controllers\Controller;
 use App\Repositories\TiersRepository;
 use App\Repositories\CFDossierRepository;
@@ -53,7 +52,7 @@ class DemandeCreditController extends Controller
 
         $employe = \Auth::user()->employe;
 
-        $demandes = DemandePretGroupe::join('cf_dossiers','cf_demande_pret_groupes.dossier_id','cf_dossiers.id_dossier')
+        $demandes = GroupLoanApplication::join('cf_dossiers','cf_demande_pret_groupes.dossier_id','cf_dossiers.id_dossier')
                         ->join('cd_demandes', 'cf_demande_pret_groupes.ref_dde','cd_demandes.id_demande')
                         ->join('cf_groupe_solidarites', 'cf_dossiers.groupe_id','cf_groupe_solidarites.id_groupe')
                         ->join('tiers', 'cf_groupe_solidarites.id_groupe','tiers.id_tiers')
@@ -120,7 +119,7 @@ class DemandeCreditController extends Controller
 
         }
 
-        $tiers = Tiers::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
+        $tiers = Customer::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
                         ->where('groupe_id',session('id_groupe'))
                         ->where('status', 'A')
                         ->whereNotIn('id_tiers', $cart)
@@ -174,12 +173,12 @@ class DemandeCreditController extends Controller
             session()->forget('cf_create_dde');
         }
 
-        $tiers = Tiers::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
+        $tiers = Customer::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
                         ->where('groupe_id',session('id_groupe'))
                         ->whereIn('id_tiers', $cart)
                         ->get();
 
-        $nb_tiers_rest = Tiers::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
+        $nb_tiers_rest = Customer::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
                         ->where('groupe_id',session('id_groupe'))
                         ->where('status', 'A')
                         ->whereNotIn('id_tiers', $cart)
@@ -205,7 +204,7 @@ class DemandeCreditController extends Controller
     public function create($id_tiers)
     {
 
-        $membre = Tiers::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
+        $membre = Customer::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
                         ->where('id_tiers', $id_tiers)
                         ->first();
 
@@ -213,7 +212,7 @@ class DemandeCreditController extends Controller
             return abort(404);
         }
 
-        $groupe = GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
+        $groupe = Group::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
                         ->where('id_groupe', session('id_groupe'))
                         ->first();
 
@@ -279,13 +278,13 @@ class DemandeCreditController extends Controller
         $id_dossier)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         if(empty($dossier->id_dossier)){
             return abort(404);
         }
 
-        $groupe = GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
+        $groupe = Group::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
                         ->where('id_groupe', session('id_groupe'))
                         ->first();
 
@@ -295,7 +294,7 @@ class DemandeCreditController extends Controller
 
         $sum_demande = $_demande->sum($id_dossier);
 
-        $nb_operation = CFOperation::where('dossier_id', $id_dossier)
+        $nb_operation = MeetingOperation::where('dossier_id', $id_dossier)
                                     ->count();
 
         return view('groupement.demandes.show', [
@@ -312,13 +311,13 @@ class DemandeCreditController extends Controller
     public function edit($id_demande)
     {
 
-        $demande = DemandePret::where('id_demande', $id_demande)->first();
+        $demande = ApplicationLoan::where('id_demande', $id_demande)->first();
 
         if(empty($demande->id_demande)){
             return back();
         }
 
-        $membre = Tiers::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
+        $membre = Customer::join('cf_membres','tiers.id_tiers','=','cf_membres.tiers_id')
                         ->where('id_tiers', $demande->tiers_id)
                         ->first();
 
@@ -326,7 +325,7 @@ class DemandeCreditController extends Controller
             return abort(404);
         }
 
-        $groupe = GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
+        $groupe = Group::join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
                         ->where('id_groupe', session('id_groupe'))
                         ->first();
 
@@ -357,9 +356,9 @@ class DemandeCreditController extends Controller
             'objet_pret'    =>$request->objet,
         ];
 
-        $dossier = DemandePretGroupe::where('ref_dde', $id_demande)->first();
+        $dossier = GroupLoanApplication::where('ref_dde', $id_demande)->first();
 
-        DemandePret::where('id_demande', $id_demande)->update($demande);
+        ApplicationLoan::where('id_demande', $id_demande)->update($demande);
 
         return redirect()->route('gp.demande.show', $dossier->dossier_id);
 

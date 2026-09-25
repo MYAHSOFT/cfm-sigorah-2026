@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CDOperation;
-use App\Models\CFDossier;
+use App\Models\Lending\TransactionLoan;
+use App\Models\Association\Cycle;
 use App\Repositories\CFCalendierCyclesRepository;
 use App\Repositories\DemandePretGroupeRepository;
 use Illuminate\Http\Request;
@@ -18,7 +18,7 @@ class CalendrierController extends ApiController
     /** Encours (prêts groupe non soldés) de l'animatrice. */
     public function index()
     {
-        $encours = CDOperation::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', 'cf_contrat_pret_groupes.pret_id')
+        $encours = TransactionLoan::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', 'cf_contrat_pret_groupes.pret_id')
             ->join('cf_groupe_solidarites', 'cf_contrat_pret_groupes.groupe_id', 'cf_groupe_solidarites.id_groupe')
             ->join('cf_dossiers', 'cf_contrat_pret_groupes.dossier_id', 'cf_dossiers.id_dossier')
             ->join('tiers', 'cf_groupe_solidarites.id_groupe', 'tiers.id_tiers')
@@ -33,13 +33,13 @@ class CalendrierController extends ApiController
     }
 
     /** Calendrier-cycle d'un dossier. */
-    public function showByDossier(CFCalendierCyclesRepository $repo, CFDossier $dossier)
+    public function showByDossier(CFCalendierCyclesRepository $repo, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
         $calendriers = $repo->get($dossier->id_dossier);
 
-        $octrois = CDOperation::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', 'cf_contrat_pret_groupes.pret_id')
+        $octrois = TransactionLoan::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', 'cf_contrat_pret_groupes.pret_id')
             ->where('dossier_id', $dossier->id_dossier)
             ->where('debit', '>', 0)
             ->select('dossier_id', DB::raw('SUM(debit) debit, COUNT(*) nb_contrat'))
@@ -57,14 +57,14 @@ class CalendrierController extends ApiController
      * Génère le calendrier-cycle (miroir de store()).
      * Body: { date_octroi }
      */
-    public function store(Request $request, DemandePretGroupeRepository $repo, CFDossier $dossier)
+    public function store(Request $request, DemandePretGroupeRepository $repo, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
         $request->validate(['date_octroi' => ['required', 'date']]);
         session()->put('cf_calendrier_tmp', json_encode(['date_octroi' => $request->input('date_octroi')]));
 
-        $octrois = CDOperation::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', '=', 'cf_contrat_pret_groupes.pret_id')
+        $octrois = TransactionLoan::join('cf_contrat_pret_groupes', 'cd_operations.pret_id', '=', 'cf_contrat_pret_groupes.pret_id')
             ->where('dossier_id', $dossier->id_dossier)
             ->where('debit', '>', 0)
             ->get();
@@ -91,7 +91,7 @@ class CalendrierController extends ApiController
         DB::transaction(function () use ($cals, $echeanciers, $dossier, $echeance) {
             DB::table('cf_calendier_cycles')->insert($cals);
             DB::table('cd_calendriers')->insert($echeanciers);
-            CFDossier::where('id_dossier', $dossier->id_dossier)
+            Cycle::where('id_dossier', $dossier->id_dossier)
                 ->update(['fin_cycle' => $echeance, 'date_prev_remb' => $echeance]);
         });
 
@@ -102,7 +102,7 @@ class CalendrierController extends ApiController
      * Recalcule / réécrit le calendrier à partir des paramètres de réunion (miroir de update()).
      * Body: { date_premier_remb, mode, jour }
      */
-    public function update(Request $request, DemandePretGroupeRepository $repo, CFDossier $dossier)
+    public function update(Request $request, DemandePretGroupeRepository $repo, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
@@ -144,7 +144,7 @@ class CalendrierController extends ApiController
             \App\Models\Calendrier::insert($cdCalendrier);
             \App\Models\CFEcheancier::whereIn('pret_id', $pretIds)->delete();
             \App\Models\CFEcheancier::insert($echeancier);
-            CFDossier::where('id_dossier', $dossier->id_dossier)->update([
+            Cycle::where('id_dossier', $dossier->id_dossier)->update([
                 'mode_reunion' => $data['mode'],
                 'jour_reunion' => $data['jour'],
                 'nb_reunion'   => config('groupement.nb_reunion')[$data['mode']] ?? null,

@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Groupement;
 
 use DB;
-use App\Models\CFDossier;
-use App\Models\CFOperation;
+use App\Models\Association\Cycle;
+use App\Models\Association\MeetingOperation;
 use Illuminate\Http\Request;
-use App\Models\ContratPretGroupe;
+use App\Models\Association\GroupLoanContract;
 use App\Http\Controllers\Controller;
 
 class FicheMembreController extends Controller
@@ -29,7 +29,7 @@ class FicheMembreController extends Controller
     {
 
 
-        $contrats = ContratPretGroupe::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
+        $contrats = GroupLoanContract::join('cd_contrats', 'cf_contrat_pret_groupes.pret_id', 'cd_contrats.id_pret')
                                 ->join('cf_dossiers','cf_contrat_pret_groupes.dossier_id','cf_dossiers.id_dossier')
                                 ->where('cf_dossiers.groupe_id', session('id_groupe'))
                                 ->where(function($query){
@@ -57,7 +57,7 @@ class FicheMembreController extends Controller
 
         }
 
-        $nb_contrat_all = ContratPretGroupe::where('groupe_id', session('id_groupe'))
+        $nb_contrat_all = GroupLoanContract::where('groupe_id', session('id_groupe'))
                                     ->whereNotIn('dossier_id', $docs)
                                     ->select('dossier_id')
                                     ->groupBy('dossier_id')
@@ -100,11 +100,11 @@ class FicheMembreController extends Controller
     public function show(Request $request, $id_tiers, $id_dossier)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
         $tri = $request->tri == 'za' ? 'desc' : 'asc';
 
-        $operations = CFOperation::where('tiers_id', $id_tiers)
+        $operations = MeetingOperation::where('tiers_id', $id_tiers)
                             ->where('dossier_id', $id_dossier)
                             ->orderBy('date_oper', $tri)
                             ->get();
@@ -113,7 +113,7 @@ class FicheMembreController extends Controller
             return back();
         }
 
-        $sum_operation = CFOperation::where('tiers_id', $id_tiers)
+        $sum_operation = MeetingOperation::where('tiers_id', $id_tiers)
                             ->where('dossier_id', $id_dossier)
                             ->select('dossier_id','tiers_id',DB::raw("SUM(mtt_remb) mtt_remb, SUM(mtt_depot) mtt_depot, SUM(mtt_retrait) mtt_retrait, SUM(penalite) penalite"))
                             ->groupBy('dossier_id','tiers_id')

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Groupement;
 
 use App\Http\Controllers\Controller;
-use App\Models\GroupeSolideMembre;
+use App\Models\Association\Member;
 use Illuminate\Http\Request;
 
 class AttributionMembreController extends Controller
@@ -37,7 +37,7 @@ class AttributionMembreController extends Controller
     public function store(Request $request)
     {
 
-        $membre = GroupeSolideMembre::where([
+        $membre = Member::where([
                 ['fonction_id', $request->fonctionMembre],
                 ['groupe_id', $request->groupeId],
             ])
@@ -46,7 +46,7 @@ class AttributionMembreController extends Controller
 
 
         if(!empty($membre->tiers_id)){
-            GroupeSolideMembre::where([
+            Member::where([
                 ['tiers_id', $membre->tiers_id],
                 ['groupe_id', $request->groupeId],
             ])
@@ -55,7 +55,7 @@ class AttributionMembreController extends Controller
             ]);
         }
 
-        GroupeSolideMembre::where([
+        Member::where([
                 ['tiers_id', $request->folio],
                 ['groupe_id', $request->groupeId],
             ])

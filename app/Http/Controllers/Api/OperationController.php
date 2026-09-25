@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\CFDossier;
-use App\Models\CFOperation;
-use App\Models\ContratPret;
+use App\Models\Association\Cycle;
+use App\Models\Association\MeetingOperation;
+use App\Models\Lending\ContractLoan;
 use App\Repositories\TiersRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,13 +21,13 @@ class OperationController extends ApiController
     {
         $this->authorize('access', $groupe);
 
-        $dossiers = CFOperation::join('cf_dossiers', 'cf_operations.dossier_id', 'cf_dossiers.id_dossier')
+        $dossiers = MeetingOperation::join('cf_dossiers', 'cf_operations.dossier_id', 'cf_dossiers.id_dossier')
             ->where('groupe_id', $groupe->id_groupe)
             ->select('id_dossier')
             ->groupBy('id_dossier')
             ->pluck('id_dossier');
 
-        $contrats = CFDossier::join('cf_contrat_pret_groupes', 'cf_dossiers.id_dossier', 'cf_contrat_pret_groupes.dossier_id')
+        $contrats = Cycle::join('cf_contrat_pret_groupes', 'cf_dossiers.id_dossier', 'cf_contrat_pret_groupes.dossier_id')
             ->join('cd_operations', 'cf_contrat_pret_groupes.pret_id', '=', 'cd_operations.pret_id')
             ->whereIn('id_dossier', $dossiers)
             ->select('id_dossier', DB::raw('MIN(date_oper) date_oper, SUM(debit) debit, SUM(credit) credit'))
@@ -38,13 +38,13 @@ class OperationController extends ApiController
     }
 
     /** Opérations d'un dossier, groupées par réunion (?tri=asc|desc). */
-    public function showByDossier(Request $request, CFDossier $dossier)
+    public function showByDossier(Request $request, Cycle $dossier)
     {
         $this->authorize('access', $dossier);
 
         $tri = $request->input('tri') === 'desc' ? 'desc' : 'asc';
 
-        $operations = CFOperation::where('dossier_id', $dossier->id_dossier)
+        $operations = MeetingOperation::where('dossier_id', $dossier->id_dossier)
             ->select('dossier_id', 'ref_operation', 'date_oper', DB::raw('SUM(mtt_remb) mtt_remb, SUM(mtt_depot) mtt_depot, SUM(mtt_retrait) mtt_retrait, SUM(penalite) penalite'))
             ->groupBy('dossier_id', 'date_oper', 'ref_operation')
             ->orderBy('date_oper', $tri)
@@ -54,11 +54,11 @@ class OperationController extends ApiController
     }
 
     /** Détail d'une opération (par membre). */
-    public function detail(CFDossier $dossier, string $refOperation)
+    public function detail(Cycle $dossier, string $refOperation)
     {
         $this->authorize('access', $dossier);
 
-        $operations = CFOperation::join('tiers', 'cf_operations.tiers_id', 'tiers.id_tiers')
+        $operations = MeetingOperation::join('tiers', 'cf_operations.tiers_id', 'tiers.id_tiers')
             ->join('cf_membres', 'tiers.id_tiers', 'cf_membres.tiers_id')
             ->where('ref_operation', $refOperation)
             ->where('dossier_id', $dossier->id_dossier)
@@ -66,7 +66,7 @@ class OperationController extends ApiController
             ->orderBy('nom_tiers')
             ->get();
 
-        $sum = CFOperation::where('ref_operation', $refOperation)
+        $sum = MeetingOperation::where('ref_operation', $refOperation)
             ->where('dossier_id', $dossier->id_dossier)
             ->select('dossier_id', 'ref_operation', 'date_oper', DB::raw('SUM(mtt_remb) mtt_remb, SUM(mtt_depot) mtt_depot, SUM(mtt_retrait) mtt_retrait, SUM(penalite) penalite'))
             ->groupBy('dossier_id', 'date_oper', 'ref_operation')
@@ -80,13 +80,13 @@ class OperationController extends ApiController
     }
 
     /** Modifie la date d'une opération (miroir de update()). Body: { date_oper }. */
-    public function updateDate(Request $request, CFDossier $dossier, string $refOperation)
+    public function updateDate(Request $request, Cycle $dossier, string $refOperation)
     {
         $this->authorize('access', $dossier);
 
         $request->validate(['date_oper' => ['required', 'date']]);
 
-        CFOperation::where('dossier_id', $dossier->id_dossier)
+        MeetingOperation::where('dossier_id', $dossier->id_dossier)
             ->where('ref_operation', $refOperation)
             ->update(['date_oper' => $request->input('date_oper')]);
 
@@ -97,7 +97,7 @@ class OperationController extends ApiController
     public function membre(TiersRepository $repo, string $tiers, ?string $refPret = null)
     {
         $membre = $repo->find($tiers);
-        $contrat = $refPret ? ContratPret::where('ref_pret', $refPret)->first() : null;
+        $contrat = $refPret ? ContractLoan::where('ref_pret', $refPret)->first() : null;
 
         return $this->data([
             'membre' => [

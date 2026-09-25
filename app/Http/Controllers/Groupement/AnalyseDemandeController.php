@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Groupement;
 
-use App\Models\DemandePret;
+use App\Models\Lending\ApplicationLoan;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Models\Tiers;
+use App\Models\Customer\Customer;
 use App\Repositories\EmployeRepository;
 use App\Repositories\CFDossierRepository;
 use App\Repositories\DemandePretGroupeRepository;
@@ -65,7 +65,7 @@ class AnalyseDemandeController extends Controller
 
         $demande = $_demande->find($ref_dde);
 
-        $tiers = Tiers::where('id_tiers', $demande->tiers_id)->first();
+        $tiers = Customer::where('id_tiers', $demande->tiers_id)->first();
 
         return view('groupement.credits.analyses.create', [
 
@@ -80,7 +80,7 @@ class AnalyseDemandeController extends Controller
     {
 
 
-        DemandePret::where('ref_dde', $request->refDde)->update([
+        ApplicationLoan::where('ref_dde', $request->refDde)->update([
             'mtt_recommande'=>$request->mttCapital
         ]);
 

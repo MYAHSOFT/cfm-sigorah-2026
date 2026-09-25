@@ -1,7 +1,7 @@
 <?php
 namespace App\Repositories;
 
-use App\Models\GroupeSolide;
+use App\Models\Association\Group;
 use Illuminate\Support\Facades\Auth;
 
 class GroupeSolideRepository
@@ -10,7 +10,7 @@ class GroupeSolideRepository
     public function find($id_groupe)
     {
 
-        return GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
+        return Group::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
                         ->orWhere('id_groupe', $id_groupe)
                         ->orWhere('num_caisse', $id_groupe)
                         ->first();
@@ -20,7 +20,7 @@ class GroupeSolideRepository
     public function paginate($per_page = 10)
     {
 
-        return GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
+        return Group::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
                         ->where(function($query){
 
                             $search = session()->has('groupement') ? json_decode(session('groupement')) : (object)[];
@@ -85,7 +85,7 @@ class GroupeSolideRepository
 
         $user = \Auth::user();
 
-        return GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
+        return Group::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
                         ->where('agent_id', $user->name)
                         ->where(function($query){
 
@@ -107,7 +107,7 @@ class GroupeSolideRepository
     public function caisseByAnimatrice($animatrice_id)
     {
 
-        return GroupeSolide::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
+        return Group::join('tiers', 'cf_groupe_solidarites.id_groupe','=','tiers.id_tiers')
                         ->join('caisses', 'tiers.caisse_id','caisses.id_caisse')
                         ->where('animatrice_id', $animatrice_id)
                         ->select('caisses.id_caisse','caisses.agence_id')

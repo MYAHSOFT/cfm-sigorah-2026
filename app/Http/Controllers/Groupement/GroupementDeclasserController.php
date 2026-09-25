@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Groupement;
 
-use App\Models\Compte;
+use App\Models\Saving\AccountSaving;
 use Illuminate\Http\Request;
-use App\Models\CFFonctionGroupe;
+use App\Models\Association\MemberRole;
 use App\Http\Controllers\Controller;
 use App\Models\ProfilGroupement;
 use App\Repositories\GroupeSolideRepository;
@@ -57,7 +57,7 @@ class GroupementDeclasserController extends Controller
 
         $bureau = $_membre_groupe->getBureau($groupe_id);
 
-        $compte = Compte::join('cf_groupe_solidarites','ep_comptes.tiers_id','=','cf_groupe_solidarites.id_groupe')
+        $compte = AccountSaving::join('cf_groupe_solidarites','ep_comptes.tiers_id','=','cf_groupe_solidarites.id_groupe')
                         ->where('id_groupe', $id_groupe)
                         ->first();
 

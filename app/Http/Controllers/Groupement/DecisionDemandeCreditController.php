@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Groupement;
 
-use App\Models\DemandePret;
+use App\Models\Lending\ApplicationLoan;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Repositories\CFDossierRepository;
@@ -39,7 +39,7 @@ class DecisionDemandeCreditController extends Controller
 
         foreach ($demandes as $demande) {
 
-            DemandePret::where('ref_dde', $demande->ref_dde)->update([
+            ApplicationLoan::where('ref_dde', $demande->ref_dde)->update([
                 'decision'  =>'A'
             ]);
 

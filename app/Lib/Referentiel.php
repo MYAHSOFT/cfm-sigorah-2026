@@ -3,17 +3,16 @@
 namespace App\Lib;
 
 use DB;
-use App\Models\Tiers;
-use App\Models\Caisse;
-use App\Models\Compte;
-use App\Models\Journal;
+use App\Models\Customer\Customer;
+use App\Models\Bank\Teller;
+use App\Models\Saving\AccountSaving;
+use App\Models\Accounting\JournalAccounting;
 use App\Models\Ecriture;
-use App\Models\CFDossier;
+use App\Models\Association\Cycle;
 use App\Models\PlanCompte;
-use App\Models\ContratPret;
-use App\Models\DemandePret;
-use App\Models\GroupeSolide;
-use App\Models\CycleActivite;
+use App\Models\Lending\ContractLoan;
+use App\Models\Lending\ApplicationLoan;
+use App\Models\Association\Group;
 use App\Models\DemandeCompte;
 use App\Models\ContratEpargne;
 use Illuminate\Database\Query\Builder;
@@ -35,7 +34,7 @@ class Referentiel
 
          $new_id = (int)$caisse.'00001';
 
-         $max_id = Tiers::where('id_tiers','like',$caisse.'%')
+         $max_id = Customer::where('id_tiers','like',$caisse.'%')
                     ->max('id_tiers');
 
          if(!empty($max_id)){
@@ -46,7 +45,7 @@ class Referentiel
 
              while ($test == true) {
 
-                 $tiers = Tiers::where('id_tiers', $new_id)->first();
+                 $tiers = Customer::where('id_tiers', $new_id)->first();
 
                  if(empty($tiers->id_tiers)){
 
@@ -76,7 +75,7 @@ class Referentiel
          while ($test == true) {
  
  
-             $groupe = GroupeSolide::where('id_groupe', $new_id)->first();
+             $groupe = Group::where('id_groupe', $new_id)->first();
  
              if(empty($groupe->id_groupe)){
  
@@ -108,7 +107,7 @@ class Referentiel
 
         $y = (new \DateTime($dateDemande))->format('y');
 
-        $lastId = DemandePret::where('caisse_id', $caisseId)
+        $lastId = ApplicationLoan::where('caisse_id', $caisseId)
                                 ->whereYear('date_demande', $year)
                                 ->max('id_demande');
 
@@ -118,7 +117,7 @@ class Referentiel
 
         while ($test == true) {
 
-            $demande = DemandePret::where('id_demande', $newId)->first();
+            $demande = ApplicationLoan::where('id_demande', $newId)->first();
 
             if(empty($demande->id_demande)){
 
@@ -145,7 +144,7 @@ class Referentiel
 
         $y = (new \DateTime($dateContrat))->format('y');
 
-        $lastId = ContratPret::join('cd_demandes', 'cd_contrats.demande_id','cd_demandes.id_demande')
+        $lastId = ContractLoan::join('cd_demandes', 'cd_contrats.demande_id','cd_demandes.id_demande')
                         ->where('caisse_id', $caisse_id)
                         ->whereYear('date_contrat', $year)
                         ->max('id_pret');
@@ -156,7 +155,7 @@ class Referentiel
 
         while ($test == true) {
 
-            $contrat = ContratPret::where('id_pret', $newId)->first();
+            $contrat = ContractLoan::where('id_pret', $newId)->first();
 
             if(empty($contrat->id_pret)){
 
@@ -180,7 +179,7 @@ class Referentiel
 
         $date_time = new \DateTime($debut_cycle);
 
-        $nb_dossier = CFDossier::where('groupe_id', $id_groupe)
+        $nb_dossier = Cycle::where('groupe_id', $id_groupe)
                     ->whereYear('debut_cycle', $date_time->format('Y'))
                     ->count();
 
@@ -196,7 +195,7 @@ class Referentiel
 
             while ($test == true) {
 
-                $dossier = CFDossier::where('id_dossier', $new_id)->first();
+                $dossier = Cycle::where('id_dossier', $new_id)->first();
 
                 if(empty($dossier->id_dossier)){
 

@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Groupement;
 
 use App\Http\Controllers\Controller;
-use App\Models\Calendrier;
-use App\Models\CDOperation;
-use App\Models\CFDossier;
-use App\Models\CFOperation;
-use App\Models\Journal;
+use App\Models\Lending\ScheduleLoan;
+use App\Models\Lending\TransactionLoan;
+use App\Models\Association\Cycle;
+use App\Models\Association\MeetingOperation;
+use App\Models\Accounting\JournalAccounting;
 use App\Repositories\OperationGroupeRepository;
 use Illuminate\Http\Request;
 use DB;
@@ -49,15 +49,15 @@ class FinCycleController extends Controller
     public function create($id_dossier)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
-        $cd_operation = CDOperation::join('cf_contrat_pret_groupes', 'cd_operations.pret_id','cf_contrat_pret_groupes.pret_id')
+        $cd_operation = TransactionLoan::join('cf_contrat_pret_groupes', 'cd_operations.pret_id','cf_contrat_pret_groupes.pret_id')
                             ->select('dossier_id',DB::raw("SUM(debit) mtt_octroye"))
                             ->where('dossier_id', $id_dossier)
                             ->groupBy('dossier_id')
                             ->first();
 
-        $echeancier = Calendrier::join('cf_contrat_pret_groupes', 'cd_calendriers.pret_id','cf_contrat_pret_groupes.pret_id')
+        $echeancier = ScheduleLoan::join('cf_contrat_pret_groupes', 'cd_calendriers.pret_id','cf_contrat_pret_groupes.pret_id')
                             ->where('dossier_id', $id_dossier)
                             ->select('dossier_id', DB::raw("SUM(capital) capital, SUM(interet) interet"))
                             ->groupBy('dossier_id')
@@ -67,7 +67,7 @@ class FinCycleController extends Controller
             return redirect()->route('gp.calendrier.create', $id_dossier);
         }
 
-        $cf_operation = CFOperation::where('dossier_id', $id_dossier)
+        $cf_operation = MeetingOperation::where('dossier_id', $id_dossier)
                             ->select('dossier_id',DB::raw("SUM(mtt_remb) mtt_remb, SUM(mtt_depot) mtt_depot, SUM(mtt_retrait) mtt_retrait, SUM(penalite) penalite"))
                             ->groupBy('dossier_id')
                             ->first();
@@ -98,13 +98,13 @@ class FinCycleController extends Controller
             
         }
 
-        $dossier = CFDossier::find($request->dossierId);
+        $dossier = Cycle::find($request->dossierId);
 
-        $octrois = CDOperation::join('cf_contrat_pret_groupes', 'cd_operations.pret_id','cf_contrat_pret_groupes.pret_id')
+        $octrois = TransactionLoan::join('cf_contrat_pret_groupes', 'cd_operations.pret_id','cf_contrat_pret_groupes.pret_id')
                             ->where('dossier_id', $request->id_dossier)
                             ->get();
 
-        $echeanciers = Calendrier::join('cf_contrat_pret_groupes', 'cd_calendriers.pret_id','cf_contrat_pret_groupes.pret_id')
+        $echeanciers = ScheduleLoan::join('cf_contrat_pret_groupes', 'cd_calendriers.pret_id','cf_contrat_pret_groupes.pret_id')
                             ->where('dossier_id', $request->id_dossier)
                             ->get();
 
@@ -149,11 +149,11 @@ class FinCycleController extends Controller
             $journal['module'] = 'G';
             $journal['libelle'] = "JOURNAL DCF ".$dossier->animatrice;
 
-            Journal::create($journal);
+            JournalAccounting::create($journal);
 
-            CDOperation::insert($remboursements);
+            TransactionLoan::insert($remboursements);
 
-            CFDossier::where('id_dossier', $request->id_dossier)
+            Cycle::where('id_dossier', $request->id_dossier)
                     ->update(['statut'=>'C']);
         });
 
@@ -170,9 +170,9 @@ class FinCycleController extends Controller
     public function show($id_dossier)
     {
 
-        $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
+        $dossier = Cycle::where('id_dossier', $id_dossier)->first();
 
-        $calendriers = Calendrier::join('cf_contrat_pret_groupes', 'cd_calendriers.pret_id','cf_contrat_pret_groupes.pret_id')
+        $calendriers = ScheduleLoan::join('cf_contrat_pret_groupes', 'cd_calendriers.pret_id','cf_contrat_pret_groupes.pret_id')
                             ->where('dossier_id', $id_dossier)
                             ->get();
 
@@ -187,7 +187,7 @@ class FinCycleController extends Controller
             $sum_interet += $calendrier->interet;
         }
 
-        $cd_operations = CDOperation::join('cf_contrat_pret_groupes', 'cd_operations.pret_id','cf_contrat_pret_groupes.pret_id')
+        $cd_operations = TransactionLoan::join('cf_contrat_pret_groupes', 'cd_operations.pret_id','cf_contrat_pret_groupes.pret_id')
                             ->join('cd_contrats', 'cf_contrat_pret_groupes.pret_id','cd_contrats.id_pret')
                             ->join('cd_demandes','cd_contrats.demande_id','cd_demandes.tiers_id')
                             ->join('tiers','cd_demandes.tiers_id','tiers.id_tiers')
@@ -198,11 +198,11 @@ class FinCycleController extends Controller
                             ->orderBy('nom_tiers')
                             ->get();
 
-        $sum_octroi = CDOperation::join('cf_contrat_pret_groupes', 'cd_operations.pret_id','cf_contrat_pret_groupes.pret_id')
+        $sum_octroi = TransactionLoan::join('cf_contrat_pret_groupes', 'cd_operations.pret_id','cf_contrat_pret_groupes.pret_id')
                             ->where('dossier_id', $id_dossier)
                             ->sum('debit');
 
-        $cf_operations = CFOperation::where('dossier_id', $id_dossier)
+        $cf_operations = MeetingOperation::where('dossier_id', $id_dossier)
                                 ->select('dossier_id','tiers_id',
                                         DB::raw("SUM(mtt_remb) mtt_remb, SUM(mtt_depot) mtt_depot, SUM(mtt_retrait) mtt_retrait, SUM(penalite) penalite"))
                                 ->groupBy('dossier_id','tiers_id')
