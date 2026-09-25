@@ -24,28 +24,26 @@ use App\Http\Controllers\Groupement\MembreBureauController;
 use App\Http\Controllers\Groupement\EcheancierMembreController;
 use App\Models\CFDossier;
 
-Route::middleware(['animatrice'])->group(function(){
+Route::middleware(['animatrice'])->group(function () {
 
-    Route::prefix('groupement')->group(function(){
+    Route::prefix('groupement')->group(function () {
 
         Route::get('/mod1', [GroupementController::class, 'index'])->name('gp.index');
         Route::post('/mod1', [GroupementController::class, 'index']);
 
         Route::get('/select/{id_groupe}', [GroupementController::class, 'checked'])->name('gp.checked');
 
-        Route::prefix('octroi')->group(function(){
+        Route::prefix('octroi')->group(function () {
 
             Route::get('/mod1', [OctroiPretController::class, 'index'])->name('gp.octroi.index');
             Route::post('/mod1', [OctroiPretController::class, 'search'])->name('gp.octroi.search');
 
             Route::get('/mod1/{id_dossier}', [OctroiPretController::class, 'show'])->name('gp.octroi.show');
-
-
         });
 
-        Route::middleware(['groupement'])->group(function(){
+        Route::middleware(['groupement'])->group(function () {
 
-            Route::prefix('membre')->group(function(){
+            Route::prefix('membre')->group(function () {
 
                 Route::get('/mod1', [MembreController::class, 'index'])->name('gp.mbre.index');
                 Route::post('/mod1', [MembreController::class, 'search'])->name('gp.mbre.search');
@@ -62,7 +60,7 @@ Route::middleware(['animatrice'])->group(function(){
 
                 Route::post('/in', [MembreInController::class, 'store'])->name('gp.mbre.in');
 
-                Route::prefix('out')->group(function(){
+                Route::prefix('out')->group(function () {
 
                     Route::get('/mo1', [MembreOutController::class, 'index'])->name('gp.mbre.out.index');
 
@@ -73,22 +71,18 @@ Route::middleware(['animatrice'])->group(function(){
                     Route::post('/lock', [MembreOutController::class, 'lockStore'])->name('gp.mbre.out.lock');
 
                     Route::get('/mod4', [MembreOutController::class, 'destroy'])->name('gp.mbre.out.destroy');
-
                 });
-
             });
 
-            Route::prefix('bureau')->group(function(){
+            Route::prefix('bureau')->group(function () {
 
                 Route::get('/mod1', [MembreBureauController::class, 'index'])->name('gp.bureau.index');
 
                 Route::get('/mod2/{id_fonction}', [MembreBureauController::class, 'create'])->name('gp.bureau.create');
                 Route::get('/mod2/{id_tiers}/{id_fonction}', [MembreBureauController::class, 'store'])->name('gp.bureau.store');
-
-
             });
 
-            Route::prefix('demande')->group(function(){
+            Route::prefix('demande')->group(function () {
 
                 // Route::get('/all', [DemandeCreditController::class, 'all'])->name('gp.demande.all');
 
@@ -107,7 +101,7 @@ Route::middleware(['animatrice'])->group(function(){
 
                 Route::get('/mod4/{id_tiers}', [DemandeCreditController::class, 'destroy'])->name('gp.demande.destroy');
 
-                Route::prefix('tmp')->group(function(){
+                Route::prefix('tmp')->group(function () {
                     Route::get('/mod1', [DemandeTmpController::class, 'index'])->name('gp.demande.tmp.index');
                     Route::get('/mod1/{id_dossier}', [DemandeTmpController::class, 'show'])->name('gp.demande.tmp.show');
 
@@ -121,10 +115,9 @@ Route::middleware(['animatrice'])->group(function(){
 
                     Route::post('/mod4/{id_dossier}', [DemandeTmpController::class, 'destroy'])->name('gp.demande.tmp.destroy');
                 });
-
             });
 
-            Route::prefix('doc')->group(function(){
+            Route::prefix('doc')->group(function () {
 
                 Route::get('/mod1', [DossierController::class, 'index'])->name('gp.doc.index');
                 Route::post('/mod1', [DossierController::class, 'search'])->name('gp.doc.search');
@@ -135,31 +128,28 @@ Route::middleware(['animatrice'])->group(function(){
 
                 Route::get('/mod3/{id_dossier}', [DossierController::class, 'edit'])->name('gp.doc.edit');
                 Route::post('/mod3/{id_dossier}', [DossierController::class, 'update'])->name('gp.doc.update');
-
             });
 
-            Route::prefix('octroi')->group(function(){
+            Route::prefix('octroi')->group(function () {
 
                 Route::get('/mod2/{id_dossier}', [OctroiPretController::class, 'create'])->name('gp.octroi.create');
                 Route::post('/mod2', [OctroiPretController::class, 'store'])->name('gp.octroi.store');
 
                 Route::get('/mod4/{id_dossier}', [OctroiPretController::class, 'destroy'])->name('gp.octroi.destroy');
 
-                Route::prefix('panier')->group(function(){
+                Route::prefix('panier')->group(function () {
 
-                    Route::get('/mod2/{id_demande}', [PanierPretCartController::class, 'create'])->name('gp.octroi.cart1');
-                    Route::post('/mod2', [PanierPretCartController::class, 'store'])->name('gp.octroi.cart2');
+                    Route::get('/mod2/{id_demande}', [PanierPretCartController::class, 'create'])->name('gp.panier.cart1');
+                    Route::post('/mod2', [PanierPretCartController::class, 'store'])->name('gp.panier.cart2');
 
-                    Route::get('/all/{id_dossier}', [PanierPretCartController::class, 'storeAll'])->name('gp.octroi.storeAll');
+                    Route::get('/all/{id_dossier}', [PanierPretCartController::class, 'storeAll'])->name('gp.panier.storeAll');
 
-                    Route::get('/mod4/{id_demande}', [PanierPretCartController::class, 'destroy'])->name('gp.octroi.destroy');
-                    Route::get('/mod4', [PanierPretCartController::class, 'forget'])->name('gp.octroi.forget');
-
+                    Route::get('/mod4/{id_demande}', [PanierPretCartController::class, 'destroy'])->name('gp.panier.destroy');
+                    Route::get('/mod4', [PanierPretCartController::class, 'forget'])->name('gp.panier.forget');
                 });
-
             });
 
-            Route::prefix('contrat')->group(function(){
+            Route::prefix('contrat')->group(function () {
                 Route::get('/mod1', [ContratPretController::class, 'index'])->name('gp.contrat.index');
                 Route::post('/mod1', [ContratPretController::class, 'search'])->name('gp.contrat.search');
                 Route::get('/old', [ContratPretController::class, 'archive'])->name('gp.contrat.archive');
@@ -167,7 +157,7 @@ Route::middleware(['animatrice'])->group(function(){
                 Route::get('/mod1/{id_dossier}', [ContratPretController::class, 'show'])->name('gp.contrat.show');
             });
 
-            Route::prefix('calendrier')->group(function(){
+            Route::prefix('calendrier')->group(function () {
 
                 Route::get('/mod1', [CalendrierGroupeController::class, 'index'])->name('gp.calendrier.index');
 
@@ -175,13 +165,12 @@ Route::middleware(['animatrice'])->group(function(){
 
                 Route::get('/membre/{ref_pret}', [EcheancierMembreController::class, 'show'])->name('gp.echeancier.show');
 
-                Route::middleware(['animatrice:ANIM'])->group(function(){
+                Route::middleware(['animatrice:ANIM'])->group(function () {
 
                     Route::get('/mod2/{id_dossier}', [CalendrierGroupeController::class, 'create'])->name('gp.calendrier.create');
                     Route::post('/mod2', [CalendrierGroupeController::class, 'store'])->name('gp.calendrier.store');
 
                     Route::post('/accord', [DecisionDemandeCreditController::class, 'store'])->name('gp.dde.accord.store');
-
                 });
 
                 Route::get('/cart/mod3/{id_dossier}', [CalendrierGroupeController::class, 'edit'])->name('gp.calendrier.edit');
@@ -190,10 +179,9 @@ Route::middleware(['animatrice'])->group(function(){
 
                 // Route::get('/mod3/{id_dossier}', [CalendrierGroupeController::class, 'edit'])->name('gp.calendrier.edit');
                 Route::post('/mod3', [CalendrierGroupeController::class, 'update'])->name('gp.calendrier.update');
-
             });
 
-            Route::prefix('versement')->group(function(){
+            Route::prefix('versement')->group(function () {
 
                 Route::get('/mod1', [CartVersementController::class, 'index'])->name('gp.versement.index');
 
@@ -206,10 +194,9 @@ Route::middleware(['animatrice'])->group(function(){
                 Route::post('/mod2', [CartVersementController::class, 'store'])->name('gp.versement.store');
 
                 Route::get('/mod4', [CartVersementController::class, 'destroy'])->name('gp.versement.destroy');
-
             });
 
-            Route::prefix('operation')->group(function(){
+            Route::prefix('operation')->group(function () {
 
                 Route::get('/mod1', [OperationController::class, 'index'])->name('gp.operation.index');
 
@@ -222,7 +209,7 @@ Route::middleware(['animatrice'])->group(function(){
                 Route::get('/mod3/{id_dossier}/{ref_operaton}', [OperationController::class, 'edit'])->name('gp.operation.edit');
                 Route::post('/mod3', [OperationController::class, 'update'])->name('gp.operation.update');
 
-                Route::prefix('membre')->group(function(){
+                Route::prefix('membre')->group(function () {
                     Route::get('/mod1/{id_oper}', [OperationEditController::class, 'show'])->name('gp.operation-edit.show');
                     Route::get('/mod3/{id_oper}', [OperationEditController::class, 'edit'])->name('gp.operation-edit.edit');
                     Route::post('/mod3/{id_oper}', [OperationEditController::class, 'update'])->name('gp.operation-edit.update');
@@ -230,10 +217,9 @@ Route::middleware(['animatrice'])->group(function(){
 
                 Route::get('/fiche/mod1', [FicheMembreController::class, 'index'])->name('gp.fiche.index');
                 Route::get('/fiche/{id_tiers}/{id_dossier}', [FicheMembreController::class, 'show'])->name('gp.fiche.show');
-
             });
 
-            Route::prefix('fin-cycle')->group(function(){
+            Route::prefix('fin-cycle')->group(function () {
 
                 Route::get('/mod1', [FinCycleController::class, 'index'])->name('gp.finc.index');
 
@@ -241,23 +227,19 @@ Route::middleware(['animatrice'])->group(function(){
 
                 Route::get('/mod2/{id_dossier}', [FinCycleController::class, 'create'])->name('gp.finc.create');
                 Route::post('/mod2/{id_dossier}', [FinCycleController::class, 'store'])->name('gp.finc.store');
-
             });
-
         });
-
     });
 
-    Route::prefix('planning')->group(function(){
+    Route::prefix('planning')->group(function () {
 
         Route::get('/', [PlanningController::class, 'home'])->name('gp.planning.home');
         Route::get('/mod1/{month}', [PlanningController::class, 'index'])->name('gp.planning.index');
-
     });
 
     Route::get('demande/mod1', [DemandeCreditController::class, 'index'])->name('gp.demande.index');
 
-    Route::get('demande/groupe/{id_dossier}', function($id_dossier){
+    Route::get('demande/groupe/{id_dossier}', function ($id_dossier) {
 
 
         $dossier = CFDossier::where('id_dossier', $id_dossier)->first();
@@ -265,25 +247,21 @@ Route::middleware(['animatrice'])->group(function(){
         // $groupe = GroupeSolide::where('id_groupe', $dossier->groupe_id)->first();
 
 
-        if(empty($dossier->groupe_id)){
+        if (empty($dossier->groupe_id)) {
             return back();
         }
 
         session()->put('id_groupe', $dossier->groupe_id);
 
-        return redirect()->route('gp.demande.show',$dossier->id_dossier);
-
-
+        return redirect()->route('gp.demande.show', $dossier->id_dossier);
     })->name('gp.demande.groupe');
 
 
 
-    Route::prefix('encours')->group(function(){
+    Route::prefix('encours')->group(function () {
 
         Route::get('mod1', [EncoursController::class, 'index'])->name('gp.encours.index');
 
         Route::get('mod1/{id_dossier}', [EncoursController::class, 'show'])->name('gp.encours.show');
-
     });
-
 });
