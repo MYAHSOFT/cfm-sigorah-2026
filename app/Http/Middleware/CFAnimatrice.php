@@ -21,7 +21,7 @@ class CFAnimatrice
 
         $employe = (Auth::user())->employe;
 
-        if($employe->fonction_id !='ANIM'){
+        if($employe->titre_id != 'ANIM'){
 
             return redirect()->route('abot');
 

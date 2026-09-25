@@ -7,19 +7,19 @@ use App\Models\Association\Group;
 use App\Models\User;
 
 /**
- * Un dossier est accessible à l'animatrice qui le porte
- * (cf_dossiers.animatrice == user.name) ou, à défaut, à l'agent
- * du groupement rattaché (cf_groupe_solidarites.agent_id == user.name).
+ * Un cycle est accessible à l'animatrice qui le porte
+ * (ass_cycles.facilitator_id == user.name) ou, à défaut, à l'agent
+ * du groupement rattaché (ass_groups.agent_id == user.name).
  */
 class CFDossierPolicy
 {
     public function access(User $user, Cycle $dossier): bool
     {
-        if ($dossier->animatrice === $user->name) {
+        if ((string) $dossier->facilitator_id === (string) $user->name) {
             return true;
         }
 
-        return Group::where('id_groupe', $dossier->groupe_id)
+        return Group::where('id_group', $dossier->group_id)
             ->where('agent_id', $user->name)
             ->exists();
     }

@@ -18,12 +18,18 @@ class GroupementController extends ApiController
     /** Liste des groupements occupés par l'animatrice connectée. */
     public function index(Request $request)
     {
-        $groupes = Group::join('tiers', 'cf_groupe_solidarites.id_groupe', '=', 'tiers.id_tiers')
-            ->where('agent_id', $this->agentCode())
+        $groupes = Group::join('crm_customers', 'ass_groups.id_group', '=', 'crm_customers.folio_customer')
+            ->select('ass_groups.*', 'crm_customers.last_name', 'crm_customers.first_name', 'crm_customers.teller_id')
+            ->where('ass_groups.agent_id', $this->agentCode())
             ->when($request->filled('q'), function ($query) use ($request) {
-                $query->where('num_caisse', $request->input('q'));
+                $q = $request->input('q');
+                $query->where(function ($query) use ($q) {
+                    $query->where('ass_groups.num_group', $q)
+                        ->orWhere('ass_groups.id_group', $q)
+                        ->orWhere('crm_customers.last_name', 'like', "%{$q}%");
+                });
             })
-            ->orderBy('nom_tiers')
+            ->orderBy('crm_customers.last_name')
             ->paginate($request->integer('per_page', 20));
 
         return $this->paginated($groupes);
@@ -34,15 +40,15 @@ class GroupementController extends ApiController
     {
         $this->authorize('access', $groupe);
 
-        $compte = AccountSaving::where('tiers_id', $groupe->tiers_id)
-            ->where('produit_id', config('sigorah.produit_base'))
+        $compte = AccountSaving::where('folio', $groupe->id_group)
+            ->where('product_id', config('sigorah.produit_base'))
             ->first();
 
         return $this->data([
-            'groupe'   => $groupe,
+            'groupe'   => $groupe->load('tiers'),
             'compte'   => $compte,
-            'employe'  => Employe::where('id_employe', $groupe->animatrice_id)->first(),
-            'fonctions' => MemberRole::get(),
+            'employe'  => $groupe->employe,
+            'fonctions' => MemberRole::orderBy('sort_order')->get(),
         ]);
     }
 }

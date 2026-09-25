@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Équivalent API de CFAnimatrice : vérifie que l'utilisateur authentifié
- * est bien une animatrice (fonction_id = ANIM). Aucune écriture en session ;
+ * est bien une animatrice (titre_id = ANIM). Aucune écriture en session ;
  * renvoie du JSON en cas de refus.
  */
 class EnsureIsAnimatrice
@@ -23,7 +23,7 @@ class EnsureIsAnimatrice
             ], 403);
         }
 
-        if ($employe->fonction_id !== 'ANIM') {
+        if ($employe->titre_id !== 'ANIM') {
             return response()->json([
                 'message' => "Accès réservé aux animatrices.",
             ], 403);

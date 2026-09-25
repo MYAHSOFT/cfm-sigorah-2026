@@ -8,7 +8,7 @@ use App\Models\User;
 /**
  * Remplace en API la logique implicite du middleware `groupement` :
  * une animatrice n'accède qu'aux groupements dont elle est l'agent
- * (cf_groupe_solidarites.agent_id == user.name). À appliquer dès qu'un {groupe} figure
+ * (ass_groups.agent_id == user.name). À appliquer dès qu'un {groupe} figure
  * dans une URL, puisque l'identifiant y circule en clair.
  */
 class GroupeSolidePolicy

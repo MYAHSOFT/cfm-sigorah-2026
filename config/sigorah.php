@@ -6,7 +6,7 @@ return [
 
     'caisseId'    =>'1410',
 
-    'produit_base'  =>'01',
+    'produit_base'  =>'201', // sav_products : DEPOT A VUE
 
     'duree_pret'    =>4, //Durée de prêt pardefaut
 
