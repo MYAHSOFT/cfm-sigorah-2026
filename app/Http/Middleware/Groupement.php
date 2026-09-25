@@ -5,7 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 
-class CFGroupement
+class Groupement
 {
     /**
      * Handle an incoming request.
@@ -17,7 +17,7 @@ class CFGroupement
     public function handle(Request $request, Closure $next)
     {
 
-        if(!session()->has('id_groupe')){
+        if (!session()->has('id_groupe')) {
             return redirect()->route('gp.index');
         }
         return $next($request);

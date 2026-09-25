@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Middleware\AgentAnimatrice;
+use App\Http\Middleware\Groupement;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,8 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'animatrice' => \App\Http\Middleware\CFAnimatrice::class,
-            'groupement' => \App\Http\Middleware\CFGroupement::class,
+            'animatrice.api' => AgentAnimatrice::class,
+            'groupement' => Groupement::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
