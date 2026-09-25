@@ -49,35 +49,35 @@ Route::prefix('v1')->group(function () {
         Route::middleware('animatrice.api')->group(function () {
 
             // --- Groupements ---
-            Route::get('groupements', [GroupementController::class, 'index']);
-            Route::get('groupements/{groupe}', [GroupementController::class, 'show']);
+            Route::get('/groupements', [GroupementController::class, 'index']);
+            Route::get('/groupements/{groupe}', [GroupementController::class, 'show']);
 
             // --- Membres ---
-            Route::get('groupements/{groupe}/membres', [MembreController::class, 'index']);
-            Route::post('groupements/{groupe}/membres', [MembreController::class, 'store']);
-            Route::get('groupements/{groupe}/membres/{tiers}', [MembreController::class, 'show']);
-            Route::put('groupements/{groupe}/membres/{tiers}', [MembreController::class, 'update']);
-            Route::post('groupements/{groupe}/membres/{tiers}/photo', [MembreController::class, 'upload']);
-            Route::post('groupements/{groupe}/membres/reintegrer', [MembreController::class, 'reintegrer']);
-            Route::post('groupements/{groupe}/membres/bloquer', [MembreController::class, 'bloquer']);
+            Route::get('/groupements/{groupe}/membres', [MembreController::class, 'index']);
+            Route::post('/groupements/{groupe}/membres', [MembreController::class, 'store']);
+            Route::get('/groupements/{groupe}/membres/{tiers}', [MembreController::class, 'show']);
+            Route::put('/groupements/{groupe}/membres/{tiers}', [MembreController::class, 'update']);
+            Route::post('/groupements/{groupe}/membres/{tiers}/photo', [MembreController::class, 'upload']);
+            Route::post('/groupements/{groupe}/membres/reintegrer', [MembreController::class, 'reintegrer']);
+            Route::post('/groupements/{groupe}/membres/bloquer', [MembreController::class, 'bloquer']);
 
             // --- Bureau ---
-            Route::get('groupements/{groupe}/bureau', [BureauController::class, 'index']);
-            Route::post('groupements/{groupe}/bureau', [BureauController::class, 'store']);
+            Route::get('/groupements/{groupe}/bureau', [BureauController::class, 'index']);
+            Route::post('/groupements/{groupe}/bureau', [BureauController::class, 'store']);
 
             // --- Dossiers (cycles) ---
-            Route::get('groupements/{groupe}/dossiers', [DossierController::class, 'index']);
-            Route::post('groupements/{groupe}/dossiers', [DossierController::class, 'store']);
-            Route::post('groupements/{groupe}/dossiers/definitif', [DossierController::class, 'storeDefinitif']);
-            Route::get('dossiers/{dossier}', [DossierController::class, 'show']);
-            Route::put('dossiers/{dossier}', [DossierController::class, 'update']);
+            Route::get('/groupements/{groupe}/dossiers', [DossierController::class, 'index']);
+            Route::post('/groupements/{groupe}/dossiers', [DossierController::class, 'store']);
+            Route::post('/groupements/{groupe}/dossiers/definitif', [DossierController::class, 'storeDefinitif']);
+            Route::get('/dossiers/{dossier}', [DossierController::class, 'show']);
+            Route::put('/dossiers/{dossier}', [DossierController::class, 'update']);
 
             // --- Demandes de crédit ---
-            Route::get('demandes', [DemandeController::class, 'index']);
-            Route::get('groupements/{groupe}/membres-eligibles', [DemandeController::class, 'membresEligibles']);
-            Route::post('groupements/{groupe}/demandes', [DemandeController::class, 'store']);
-            Route::get('dossiers/{dossier}/demandes', [DemandeController::class, 'showByDossier']);
-            Route::put('demandes/{demande}', [DemandeController::class, 'update']);
+            Route::get('/demandes', [DemandeController::class, 'index']);
+            Route::get('/groupements/{groupe}/membres-eligibles', [DemandeController::class, 'membresEligibles']);
+            Route::post('/groupements/{groupe}/demandes', [DemandeController::class, 'store']);
+            Route::get('/dossiers/{dossier}/demandes', [DemandeController::class, 'showByDossier']);
+            Route::put('/demandes/{demande}', [DemandeController::class, 'update']);
 
             // --- Demandes du cycle courant (cf_demandes) ---
             Route::get('demandes-cycle', [DemandeCycleController::class, 'index']);
